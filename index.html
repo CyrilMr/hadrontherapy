@@ -74,6 +74,8 @@ nav.compact .lv:not(.actif) .ct{display:none;} nav.compact .lv:not(.actif) b{mar
 .tlv{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .tlv>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .tele{font-size:var(--f-s);color:var(--texte-2);border:1px dashed var(--trait);border-radius:999px;padding:0 10px;white-space:nowrap;}
+.version{position:fixed;left:8px;bottom:4px;font-size:var(--fh-s);color:var(--texte-2);opacity:.7;pointer-events:none;z-index:5;}
+body.eleve .version{display:none;}
 .tele.arme{border-style:solid;border-color:var(--choix);color:var(--choix);font-weight:600;}
 .tele.attente{border-color:var(--faux);color:var(--faux);}
 #ecranNoir{position:fixed;inset:0;background:#000;z-index:1000;cursor:none;}
@@ -137,6 +139,7 @@ aside.carte{display:flex;flex-direction:column;overflow:auto;gap:8px;}
 .manche.fait .pastille{background:var(--juste);color:#fff;}
 .manche.encours .pastille{background:var(--choix);color:#fff;}
 .manche .typ{margin-left:auto;font-size:calc(11px*var(--z)*var(--t-s));text-transform:uppercase;letter-spacing:.06em;color:var(--texte-2);}
+.manche.selection{background:#FFC24D;border-color:#FFC24D;} .manche.selection>button.mt,.manche.selection .typ{color:#0C1A2B;font-weight:600;}
 .manche.ouverte{background:var(--panneau);border-color:var(--dose);box-shadow:inset 0 0 0 1px var(--dose);}
 .mcorps{padding:0 10px 10px;}
 .mq{font-weight:600;margin:2px 0 8px;}
@@ -210,11 +213,11 @@ details.src summary{cursor:pointer;}
 .cl .fiche td,.cl .fiche th{text-align:center;} .cl .fiche td:nth-child(2),.cl .fiche th:nth-child(2){text-align:left;}
 
 /* ---------- fenêtre live ---------- */
-dialog#dlgLive{width:min(1100px,94vw);max-height:92vh;border:1px solid var(--trait);border-radius:14px;background:var(--panneau);color:var(--texte);padding:18px 22px;}
+dialog#dlgLive{width:min(1500px,96vw);max-height:92vh;border:1px solid var(--trait);border-radius:14px;background:var(--panneau);color:var(--texte);padding:18px 22px;}
 dialog#dlgLive::backdrop{background:rgba(12,26,43,.55);}
 .dlg-tete{display:flex;justify-content:space-between;align-items:center;gap:12px;}
 .dlg-tete h2{font-size:var(--f-l);}
-.dlg-grille{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:8px;}
+.dlg-grille{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:22px;margin-top:8px;}
 #dlgLive h3{font-size:var(--f);margin:12px 0 6px;font-family:inherit;font-weight:700;}
 #dlgLive input[type=url],#dlgLive input[type=text]{width:100%;padding:6px 8px;border:1px solid var(--trait);border-radius:8px;background:var(--panneau-2);font-size:var(--f-s);}
 #dlgLive .opt{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:var(--f-s);}
@@ -223,6 +226,7 @@ dialog#dlgLive::backdrop{background:rgba(12,26,43,.55);}
 .err{color:var(--faux);font-size:var(--f-s);min-height:1em;}
 .qrzone{display:flex;flex-direction:column;align-items:center;gap:10px;}
 .qr{background:#fff;padding:10px;border-radius:10px;min-height:120px;display:flex;align-items:center;justify-content:center;}
+.qr canvas{position:static;inset:auto;width:auto;height:auto;} .qr img{display:block;max-width:100%;height:auto;}
 .qr-txt{text-align:center;} .lien{word-break:break-all;font-size:var(--f-s);}
 .code{font-size:1.6em;letter-spacing:.15em;}
 .joints{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px;}
@@ -312,6 +316,7 @@ body.eleve{display:block;overflow:auto;height:auto;min-height:100%;font-size:18p
 <div class="barre-lv" id="barreLv"></div>
 <div id="scene"></div>
 <div class="bandeau-qr" id="bandeauQR" hidden></div>
+<div class="version" aria-label="Version de l'application">v0.1</div>
 
 <dialog id="dlgLive">
   <div class="dlg-tete"><h2>Mode live : les étudiants jouent sur leur téléphone</h2><button class="btn" id="bFermer" type="button">Fermer</button></div>
@@ -762,7 +767,9 @@ function eleveApp(){
   }
   function rendrePied(){
     if(!moi||!S.roster||!S.roster[moi]){ pied.innerHTML=''; return; }
-    const L=trierScores(S.scores,S.roster), k=L.findIndex(x=>x.id===moi); if(k<0) return;
+    /* classement parmi les étudiants connectés (et ceux qui ont déjà des points) */
+    const sc=S.scores||{}, R={}; Object.keys(S.roster).forEach(id=>{ if(id===moi||(S.joined||{})[id]||(sc[id]&&sc[id].tot>0)) R[id]=S.roster[id]; });
+    const L=trierScores(sc,R), k=L.findIndex(x=>x.id===moi); if(k<0) return;
     const me=L[k], av=L[k-1], ap=L[k+1], exa=L.filter(x=>x.rang===me.rang).length>1;
     pied.innerHTML=`<div class="el-rang"><b>${me.rang}<sup>${me.rang===1?'er':'e'}</sup></b>${exa?' ex æquo':''} sur ${L.length} · <b>${me.tot}</b> pt${me.tot>1?'s':''}</div>`+
       `<div class="el-voisins"><span>${av?'↑ '+echapper(av.nom)+' ('+av.tot+')':'Vous êtes en tête'}</span><span>${ap?'↓ '+echapper(ap.nom)+' ('+ap.tot+')':''}</span></div>`;
@@ -906,7 +913,7 @@ function qidManche(n,mod,m){ return n.id+'_'+mod.id+m.id; }
 function vueModule(n,mod){
   const el=document.createElement('div'); el.className='wrap';
   el.innerHTML=`<main class="carte" id="main_${mod.id}">${mod.html}</main><aside class="carte"><div class="jeu-tete"><h3>Jeu sur téléphone</h3><span class="note">${mod.manches.length} manche${mod.manches.length>1?'s':''}</span></div><p class="note" style="margin:0">${mod.consigne||'Ouvrez une manche, lancez-la sur les téléphones, puis révélez la réponse.'}</p><div class="manches"></div><div class="top5" hidden></div>${mod.sources?`<details class="src"><summary>Modèle et sources</summary>${mod.sources}</details>`:''}</aside>`;
-  let ouverte=null; const local={};
+  let ouverte=null, selection=null; const local={};
   mod.jeu=null;
   function jeuDe(m){ const q=qidManche(n,mod,m), D=D_(); const res=LIVE.on?(D.results||{})[q]||null:(local[m.id]?{local:true}:null);
     return {m,q,votes:LIVE.on?((D.votes||{})[q]||{}):{},res,revele:!!res,noms:D.roster||{},actif:qActif()===q}; }
@@ -925,7 +932,7 @@ function vueModule(n,mod){
   function rendreManches(){
     const box=el.querySelector('.manches'), D=D_();
     box.innerHTML=mod.manches.map((m,i)=>{ const J=jeuDe(m), op=ouverte===m.id;
-      const cl=(J.res?'fait ':'')+(J.actif?'encours ':'')+(op?'ouverte':'');
+      const cl=(J.res?'fait ':'')+(J.actif?'encours ':'')+(op?'ouverte':'')+(!op&&selection===m.id?' selection':'');
       let corps='';
       if(op){
         const nv=Object.keys(J.votes).length, nb=Math.max(nv,Object.keys(D.joined||{}).length); /* sur le nombre d'étudiants connectés */
@@ -957,16 +964,25 @@ function vueModule(n,mod){
   }
   async function lancer(m){ const q=qidManche(n,mod,m); if(m.regler) m.regler(); CORRECTEURS[q]=()=>corriger(m); await liveLancer(q,etatPour(m)); }
   /* télécommande : prochaine action du module (null = passer à l'étape suivante) */
-  function prochaine(){ const ms=mod.manches, k=ms.findIndex(x=>x.id===ouverte);
-    if(k<0) return ms.length?{label:'Ouvrir la manche 1',faire:()=>ouvrir(ms[0].id)}:null;
+  /* télécommande : 1er appui = sélectionner la manche (titre en jaune, question cachée),
+     2e appui = afficher la question (et la lancer sur les téléphones en live), 3e appui = révéler et clore le vote */
+  function selectionner(id){ ouverte=null; selection=id; majJeu(true); }
+  function prochaine(){ const ms=mod.manches, k=ms.findIndex(x=>x.id===ouverte), ks=ms.findIndex(x=>x.id===selection);
+    if(k<0){ if(ks<0) return ms.length?{label:'Sélectionner la manche 1',faire:()=>selectionner(ms[0].id)}:null;
+      const m=ms[ks], J=jeuDe(m);
+      if(LIVE.on&&!J.res) return {label:'📱 Afficher et lancer la manche '+(ks+1),lance:true,faire:async()=>{ ouvrir(m.id); await lancer(m); }};
+      return {label:'Afficher la manche '+(ks+1),faire:()=>ouvrir(m.id)}; }
     const m=ms[k], J=jeuDe(m);
-    if(LIVE.on){ if(J.actif) return {label:'Révéler et corriger',garde:true,confirmer:true,faire:()=>corriger(m)};
-      if(!J.res) return {label:'📱 Lancer la manche '+(k+1),lance:true,confirmer:true,faire:()=>lancer(m)}; }
+    if(LIVE.on){ if(J.actif) return {label:'Révéler et clore le vote',garde:true,faire:()=>corriger(m)};
+      if(!J.res) return {label:'📱 Lancer la manche '+(k+1),lance:true,faire:()=>lancer(m)}; }
     else if(!local[m.id]) return {label:'Révéler la réponse',faire:()=>{ local[m.id]=true; sonRevele(); majJeu(); }};
-    if(k+1<ms.length) return {label:'Ouvrir la manche '+(k+2),faire:()=>ouvrir(ms[k+1].id)};
+    if(k+1<ms.length) return {label:'Sélectionner la manche '+(k+2),faire:()=>selectionner(ms[k+1].id)};
     return null; }
-  function precedent(){ const ms=mod.manches, k=ms.findIndex(x=>x.id===ouverte); if(k<0) return false; ouvrir(k>0?ms[k-1].id:null); return true; }
-  function ouvrir(id){ ouverte=id; const m=mod.manches.find(x=>x.id===id); if(m&&m.regler) m.regler(); majJeu(true); }
+  function precedent(){ const ms=mod.manches, k=ms.findIndex(x=>x.id===ouverte), ks=ms.findIndex(x=>x.id===selection);
+    if(k>=0){ selectionner(ms[k].id); return true; }
+    if(ks>=0){ if(ks>0) ouvrir(ms[ks-1].id); else selectionner(null); return true; }
+    return false; }
+  function ouvrir(id){ ouverte=id; selection=null; const m=mod.manches.find(x=>x.id===id); if(m&&m.regler) m.regler(); majJeu(true); }
   let sig=''; const vuApres={};
   function majJeu(force){
     const m=mod.manches.find(x=>x.id===ouverte); const J=m?jeuDe(m):null;
@@ -1035,9 +1051,9 @@ function vueQuiz(n){
   }
   function prochaine(){ if(fin()) return null;
     const q=qid(i), D=D_(), res=LIVE.on?(D.results||{})[q]:local[i], actif=qActif()===q, clic=s=>()=>{ const b=el.querySelector(s); if(b) b.click(); };
-    if(LIVE.on){ if(actif) return {label:'Révéler et corriger',garde:true,confirmer:true,faire:clic('#qzRev')};
-      if(!res) return {label:'📱 Lancer la question '+(i+1),lance:true,confirmer:true,faire:clic('#qzLance')};
-      if(i<n.quiz.length-1) return {label:'📱 Question suivante, lancée aussitôt',lance:true,confirmer:true,faire:()=>{ i++; rendre(); lancerCourante(); }}; }
+    if(LIVE.on){ if(actif) return {label:'Révéler et corriger',garde:true,faire:clic('#qzRev')};
+      if(!res) return {label:'📱 Lancer la question '+(i+1),lance:true,faire:clic('#qzLance')};
+      if(i<n.quiz.length-1) return {label:'📱 Question suivante, lancée aussitôt',lance:true,faire:()=>{ i++; rendre(); lancerCourante(); }}; }
     else if(!res) return {label:'Révéler la réponse',faire:clic('#qzRevL')};
     return {label:i<n.quiz.length-1?'Question '+(i+2):'Bilan du quiz',faire:()=>{ i++; rendre(); }}; }
   /* en live, une question affichée est lancée tout de suite sur les téléphones */
@@ -1083,7 +1099,7 @@ function rendreDlg(){
   $('bArreter').hidden=!LIVE.on; $('bEffacer').hidden=!LIVE.on; $('optQR').hidden=!LIVE.on;
   if(!LIVE.on){ z.innerHTML=''; z.dataset.url=''; return; }
   const u=urlEleve(), ids=Object.keys(D.roster||{}).sort((a,b)=>D.roster[a].localeCompare(D.roster[b],'fr'));
-  if(z.dataset.url!==u){ z.dataset.url=u; z.innerHTML=`<div id="qrImg" class="qr"></div><div class="qr-txt"><div class="note">Les étudiants scannent ce code ou ouvrent :</div><a href="${u}" target="_blank" rel="noopener" class="lien">${echapper(u)}</a><div class="note">Code de séance : <b class="code">${LIVE.code}</b></div><div id="joints"></div></div>`; qrDans($('qrImg'),u,260); }
+  if(z.dataset.url!==u){ z.dataset.url=u; z.innerHTML=`<div id="qrImg" class="qr"></div><div class="qr-txt"><div class="note">Les étudiants scannent ce code ou ouvrent :</div><a href="${u}" target="_blank" rel="noopener" class="lien">${echapper(u)}</a><div class="note">Code de séance : <b class="code">${LIVE.code}</b></div><div id="joints"></div></div>`; qrDans($('qrImg'),u,Math.round(Math.max(260,Math.min(innerHeight*0.62,innerWidth*0.42,600)))); }
   $('joints').innerHTML=`<div class="note">${Object.keys(D.joined||{}).length} / ${ids.length} connectés</div><div class="joints">`+ids.map(id=>D.joined&&D.joined[id]?`<span class="in">${echapper(D.roster[id])}<button class="lib" data-id="${id}" type="button" title="Libérer ce prénom (changement de téléphone)">×</button></span>`:`<span>${echapper(D.roster[id])}</span>`).join('')+'</div>'+(Object.keys(D.joined||{}).length?'<div class="note">× : libérer un prénom (l\'étudiant le choisit à nouveau sur son nouveau téléphone ; ses points sont conservés).</div>':'');
   $('joints').querySelectorAll('.lib').forEach(b=>b.onclick=()=>{ const id=b.dataset.id; if(confirm('Libérer « '+D.roster[id]+' » ? Son ancien téléphone sera déconnecté ; ses points sont conservés.')) LIVE.B.set('sessions/'+LIVE.code+'/joined/'+id,null); });
 }
@@ -1168,7 +1184,7 @@ function etapeVoisine(sens){ const i=NIVEAUX.findIndex(n=>n.id===NIV); if(i<0) r
 function actionTele(){ const v=vueCourante(); const p=v&&v.prochaine?v.prochaine():null; if(p) return p;
   const e=etapeVoisine(1); if(!e) return null; const [n2,j]=e;
   const pre=(n2.id!==NIV?(n2.bonus?n2.num:'Level '+n2.num)+' · ':'');
-  if(j>=n2.modules.length&&LIVE.on) return {label:pre+'Quiz, 📱 question 1 lancée aussitôt',lance:true,confirmer:true,faire:()=>{ allerA(n2.id,j); const v=vueCourante(); if(v&&v.lancerCourante) v.lancerCourante(); }};
+  if(j>=n2.modules.length&&LIVE.on) return {label:pre+'Quiz, 📱 question 1 lancée aussitôt',lance:true,faire:()=>{ allerA(n2.id,j); const v=vueCourante(); if(v&&v.lancerCourante) v.lancerCourante(); }};
   return {label:pre+(j<n2.modules.length?n2.modules[j].titre:'Quiz'),faire:()=>allerA(n2.id,j)}; }
 /* Les actions qui agissent sur les téléphones (lancer, révéler) demandent un double appui :
    1er appui = préparer (l'indication passe en couleur), 2e appui dans les 3 s = exécuter. */
@@ -1182,7 +1198,7 @@ function telecommande(sens){ const now=Date.now(); if(now-teleT<120) return; tel
   setTimeout(majTele,60); }
 function majTele(){ const t=$('tele'); if(!t) return; let p=null; try{ p=actionTele(); }catch(e){}
   const arme=!!(p&&teleArme&&teleArme.label===p.label&&Date.now()-teleArme.t<3000);
-  const s=p?(arme?'▶▶ Appuyez encore : '+p.label:'▶ '+p.label+(p.confirmer?' · double appui':'')):'';
+  const s=p?(arme?'▶▶ Appuyez encore : '+p.label:'▶ '+p.label+''):'';
   if(t.textContent!==s) t.textContent=s; t.hidden=!s; t.classList.toggle('arme',arme); }
 function initTelecommande(){
   const noir=document.createElement('div'); noir.id='ecranNoir'; noir.hidden=true; document.body.appendChild(noir);
@@ -1914,7 +1930,10 @@ const mod={id:'a',titre:'Le bon détecteur',
     const pts=lat==='lynx'?echant(0.5,0):echant(7.6,4.5), sm=sigmaMoments(pts);
     $('l6info').innerHTML=`${NOMS[det]}<br>Lecture au pic : <b>${KB[det]?'−'+fr(sous,0)+' %':'≈ dose'}</b>`;
     $('l6info2').innerHTML=`σ réel <b>${fr(SIG,1)} mm</b> · σ estimé <b>${fr(sm,1)} mm</b>`;
-    chips('l6chips',[['Dosimétrie absolue','calorimètre'],['Fluence (étalonnage UM)','coupe de Faraday'],['Dose de référence','chambre plate (TRS-398)'],['CQ parcours rapide','Zebra'],['Spots','Lynx PT'],['Champs 2D, CQ patient','MatriXX']]);
+    /* les usages qui répondent aux manches 1 et 3 restent masqués tant que ces manches n'ont pas été révélées */
+    const J=this.jeu, vus=new Set(this.manches.filter(x=>x.vu).map(x=>x.id)); if(J&&J.m&&J.revele){ vus.add(J.m.id); J.m.vu=true; }
+    const RS=D_().results||{}; this.manches.forEach(x=>{ if(RS['L6_'+this.id+x.id]) vus.add(x.id); });
+    chips('l6chips',[['Dosimétrie absolue','calorimètre'],['Fluence (étalonnage UM)','coupe de Faraday'],['Dose de référence','chambre plate (TRS-398)',!vus.has('1')],['CQ parcours rapide','Zebra'],['Spots','Lynx PT',!vus.has('3')],['Champs 2D, CQ patient','MatriXX']]);
     let P0=prep($('cvDet'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,18); const g={x:fs*3.6,y:fs*0.8,w:W-fs*4.6,h:H-fs*3.8}, zmax=18, X=z=>g.x+z/zmax*g.w, Y=v=>g.y+g.h-v/110*g.h;
       axes(ctx,g,fs,[0,3,6,9,12,15,18].map(v=>[v,X(v),v]),[0,25,50,75,100].map(v=>[v,Y(v),v]),'Profondeur dans l\'eau (cm)','Dose ou lecture (%)');
@@ -1986,7 +2005,7 @@ const modA={id:'a',titre:'Survie : EBR et effet oxygène',
     const e=etat(), hyp=$('l7hyp').checked, cach=cache(this);
     $('l7abo').textContent=fr(e.ab,1)+' Gy'; const pc=100*Math.pow(10,e.lv); $('l7nivo').textContent=(pc<1?fr(pc,1):fr(pc,0))+' %'; $('l7leto').textContent=fr(e.L,1)+' keV/µm';
     $('l7let').disabled=rad!=='pf';
-    chips('l7chips',[['D photons',fr(e.Dx,2)+' Gy',cach],['D rayonnement',fr(e.Dr,2)+' Gy',cach],['EBR',fr(e.rbe,2),cach],['OER photons',fr(e.X.oer,1)],['OER rayonnement',fr(e.R.oer,1),cach]]);
+    chips('l7chips',[['D photons',fr(e.Dx,2)+' Gy',cach],['D rayonnement',fr(e.Dr,2)+' Gy',cach],['EBR',fr(e.rbe,2),cach],['OER photons',fr(e.X.oer,1)],['OER rayonnement',fr(e.R.oer,1),cach||(this.jeu&&this.jeu.m&&this.jeu.m.id==='3'&&!this.jeu.revele)]]);
     $('l7info').innerHTML=cach?'EBR = D<sub>photons</sub> / D<sub>ions</sub> à même survie':`EBR = ${fr(e.Dx,2)} / ${fr(e.Dr,2)} = <b>${fr(e.rbe,2)}</b>`;
     let P0=prep($('cvSurv'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,18);
@@ -2059,6 +2078,8 @@ const modB={id:'b',titre:'EBR le long du SOBP',
   redessiner(){
     if(!cB) return; const c=cB;
     $('l7ab2o').textContent=fr(c.ab,1)+' Gy'; $('l7dfxo').textContent=fr(c.dRx,1)+' Gy';
+    const Jb=this.jeu, cachV=!!(Jb&&Jb.m&&!Jb.revele&&Jb.m.id!=='3'); /* manches 1 et 2 : courbes d'EBR variable cachées jusqu'à la réponse */
+    if(cachV){ $('l7binfo').innerHTML='Question en cours : valeurs affichées après la réponse'; } else
     $('l7binfo').innerHTML=`EBR entrée <b>${fr(c.rbeEnt,2)}</b>, début du SOBP <b>${fr(c.rbeMil,2)}</b>, fin <b>${fr(c.rbeFin,2)}</b><br>Bord distal biologique décalé de <b>+${fr(c.dR80,1)} mm</b><br>Dose max à l'OAR : <b>${fr(c.oar11,2)}</b> Gy (1,1) contre <b>${fr(c.oarV,2)}</b> Gy (variable)`;
     const cadre=(id,fsf)=>{ const P0=prep($(id)); if(!P0) return null; const fs=taillePolice(P0.H,fsf,11,17); return Object.assign(P0,{fs,g:{x:fs*3.4,y:fs*0.7,w:P0.W-fs*3.4-fs*3.4,h:P0.H-fs*0.7-fs*3}}); };
     const zmax=19, bande=(ctx,g,X)=>{ ctx.fillStyle=css('--grille');ctx.globalAlpha=.6;ctx.fillRect(X(ZP),g.y,X(ZD)-X(ZP),g.h);ctx.globalAlpha=1; ctx.fillStyle=css('--S');ctx.globalAlpha=.15;ctx.fillRect(X(OAR[0]),g.y,X(OAR[1])-X(OAR[0]),g.h);ctx.globalAlpha=1; };
@@ -2067,7 +2088,7 @@ const modB={id:'b',titre:'EBR le long du SOBP',
       const yt=[]; const st=ymax<=2?0.5:ymax<=5?1:2; for(let v=0;v<=ymax+1e-9;v+=st) yt.push([v,Y(v),fr(v,1)]);
       axes(ctx,g,fs,[0,3,6,9,12,15,18].map(v=>[v,X(v),v]),yt,'Profondeur (cm)','Dose par fraction (Gy)');
       etiquette(ctx,'cible',X(ZP+1.2),g.y+2,css('--texte-2'),fs,'center','top'); etiquette(ctx,'OAR',X((OAR[0]+OAR[1])/2),g.y+2,css('--texte-2'),fs,'center','top');
-      trait(ctx,c.zs.map((z,k)=>[X(z),Y(c.Dp[k])]),css('--ghost'),2,[6,4]); if($('l7c11').checked) trait(ctx,c.zs.map((z,k)=>[X(z),Y(c.Dp[k]*1.1)]),css('--phi'),2.2); trait(ctx,c.zs.map((z,k)=>[X(z),Y(c.Db[k])]),css('--dose'),3);
+      trait(ctx,c.zs.map((z,k)=>[X(z),Y(c.Dp[k])]),css('--ghost'),2,[6,4]); if($('l7c11').checked) trait(ctx,c.zs.map((z,k)=>[X(z),Y(c.Dp[k]*1.1)]),css('--phi'),2.2); if(!cachV) trait(ctx,c.zs.map((z,k)=>[X(z),Y(c.Db[k])]),css('--dose'),3);
       ctx.font=Math.round(fs*0.9)+'px '+POLICE; [[css('--ghost'),'dose physique',[6,4]],[css('--phi'),'dose × 1,1',[]],[css('--dose'),'dose × EBR variable',[]]].forEach(([col,l,d],k)=>{ const lx=g.x+8, ly=g.y+fs*1.6+k*fs*1.2; trait(ctx,[[lx,ly],[lx+fs*1.5,ly]],col,2.5,d); etiquette(ctx,l,lx+fs*1.9,ly,css('--texte-2'),Math.round(fs*0.9),'left'); }); }
     F=cadre('cvLet',0.065);
     if(F){ const {c:ctx,g,fs}=F, dmax=Math.max(...c.Dp), vis=k=>!isNaN(c.R[k])&&c.Dp[k]>=0.1*dmax;
@@ -2079,7 +2100,7 @@ const modB={id:'b',titre:'EBR le long du SOBP',
       ctx.save();ctx.translate(F.W-fs*0.8,g.y+g.h/2);ctx.rotate(Math.PI/2);ctx.textAlign='center';ctx.fillText('TEL (keV/µm)',0,0);ctx.restore();
       trait(ctx,[[g.x,Y(1.1)],[g.x+g.w,Y(1.1)]],css('--texte-2'),1,[2,3]);
       ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();
-      trait(ctx,c.zs.map((z,k)=>[X(z),vis(k)?YL(c.L[k]):NaN]),css('--S'),2,[5,3]); trait(ctx,c.zs.map((z,k)=>[X(z),vis(k)?Y(c.R[k]):NaN]),css('--dose'),3); ctx.restore();
+      trait(ctx,c.zs.map((z,k)=>[X(z),vis(k)?YL(c.L[k]):NaN]),css('--S'),2,[5,3]); if(!cachV) trait(ctx,c.zs.map((z,k)=>[X(z),vis(k)?Y(c.R[k]):NaN]),css('--dose'),3); ctx.restore();
       etiquette(ctx,'EBR (trait), TEL (tirets, à droite), 1,1 (pointillés)',g.x+6,g.y+2,css('--texte-2'),Math.round(fs*0.9),'left','top'); }
   }
 };
@@ -2212,7 +2233,7 @@ const modB={id:'b',titre:'Mouvement : effet interplay',
     <div class="graphe"><canvas id="cvMv" aria-label="Profil de dose dans la tumeur en mouvement"></canvas><div class="info" id="l8binfo"></div></div>`,
   sources:'1D latéral. CTV de 40 mm en mouvement sinusoïdal (période 4 s). Mouvement ± 8 mm, marge ITV. PBS : spots σ = 4 mm tous les 5 mm, 10 couches, 2 s par couche, 1 s de changement d\'énergie ; on regarde la dose d\'une couche (ce qui exagère un peu l\'effet). Repainting : chaque couche délivrée 5 fois avec 1/5 du poids. Gating : faisceau en fin d\'expiration seulement (fenêtre = 30 % de l\'amplitude). Double diffusion : champ délivré en continu. Idée inspirée de la diapo 201 (Knopf et al. 2013).'+SRC_PEDA,
   manches:[
-    {id:'1',type:'choix',titre:'Une fraction en PBS',texte:'Tumeur qui bouge de ± 8 mm, PBS en un seul passage, marge ITV. Sur <b>une</b> fraction, la dose dans le CTV est-elle homogène ?',choix:['Oui, la marge ITV suffit','Non : zones sur- et sous-dosées selon la phase (effet interplay)','Non, mais seulement sur les bords'],r:1,regler:()=>reglerB('pbs',0.55),
+    {id:'1',type:'choix',titre:'Une fraction en PBS',masque:true,texte:'Tumeur qui bouge de ± 8 mm, PBS en un seul passage, marge ITV. Sur <b>une</b> fraction, la dose dans le CTV est-elle homogène ?',choix:['Oui, la marge ITV suffit','Non : zones sur- et sous-dosées selon la phase (effet interplay)','Non, mais seulement sur les bords'],r:1,regler:()=>reglerB('pbs',0.55),
      e:'Le balayage spot par spot et le mouvement respiratoire se combinent : spots étirés (sous-dosage) ou tassés (surdosage). Bouton « Autre séance » : le motif change à chaque séance (sur 30 séances, il se moyenne en partie). La marge ITV ne protège pas de cela.'},
     {id:'2',type:'choix',titre:'Même mouvement en DS',texte:'Même mouvement, mais en <b>double diffusion</b> (marge ITV) :',choix:['Mêmes points chauds et froids','Dose homogène dans le CTV : tout le champ est délivré en même temps','Pire qu\'en PBS'],r:1,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('ds'),
      e:'En DS, la roue de modulation tourne vite et tout le champ est irradié à la fois : le mouvement floute seulement les bords. D\'où la diapo PBS vs DS : « difficulté à traiter des cibles mobiles » en PBS.'},
@@ -2224,8 +2245,9 @@ const modB={id:'b',titre:'Mouvement : effet interplay',
   maj(){ calculB(); this.redessiner(); },
   init(){ seg('l8mode',v=>{ techMv=v; seancesPrec=[]; this.maj(); }); $('l8fx').onclick=()=>{ if(cB) seancesPrec=[cB.U].concat(seancesPrec).slice(0,4); let p; do{ p=Math.random(); }while(Math.abs(p-phase)<0.12); phase=p; this.maj(); }; observer(['cvMv'],()=>this.redessiner()); this.maj(); },
   redessiner(){
-    if(!cB) return; const c=cB, ok=c.uMin>=95&&c.uMax<=105, col=ok?'var(--juste)':'var(--faux)';
+    if(!cB) return; const c=cB, ok=c.uMin>=95&&c.uMax<=105, col=ok?'var(--juste)':'var(--faux)', cachB=cache(this);
     const fx=$('l8fx'); fx.disabled=techMv!=='pbs'; fx.title=techMv==='pbs'?'Même plan, autre phase respiratoire au début de la séance':techMv==='gate'?'En gating, la séance démarre toujours dans la fenêtre : le résultat ne change pas':'Peu d\'effet visible avec cette technique';
+    if(cachB) $('l8binfo').innerHTML='Tumeur qui bouge : affichée après la réponse'; else
     $('l8binfo').innerHTML=`Dose dans la tumeur : <b style="color:${col}">${fr(c.uMin,0)} à ${fr(c.uMax,0)} %</b><br>Durée de la séance : <b>${fr(c.Ttot,0)} s</b>`;
     const P0=prep($('cvMv'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,17);
@@ -2236,7 +2258,7 @@ const modB={id:'b',titre:'Mouvement : effet interplay',
       etiquette(ctx,'tumeur (CTV)',X(0),g.y+2,css('--texte-2'),fs,'center','top');
       ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();
       const tr=(a,cl,lw,d)=>trait(ctx,XS6.map((x,i)=>[X(x),Y(a[i])]),cl,lw,d);
-      tr(c.S,css('--ghost'),2,[6,4]); ctx.globalAlpha=.3; seancesPrec.forEach(a=>tr(a,css('--dose'),1.5)); ctx.globalAlpha=1; tr(c.U,css('--dose'),3); ctx.restore(); }
+      tr(c.S,css('--ghost'),2,[6,4]); ctx.globalAlpha=.3; if(!cachB) seancesPrec.forEach(a=>tr(a,css('--dose'),1.5)); ctx.globalAlpha=1; if(!cachB) tr(c.U,css('--dose'),3); ctx.restore(); }
   }
 };
 NIVEAUX.push({id:'L8',num:'8',court:'Planification',titre:'Planification de traitement',diapos:'186-202',modules:[modA,modB],quiz:[
