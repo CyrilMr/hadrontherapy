@@ -74,6 +74,7 @@ nav.compact .lv:not(.actif) .ct{display:none;} nav.compact .lv:not(.actif) b{mar
 .tlv{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .tlv>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .tele{font-size:var(--f-s);color:var(--texte-2);border:1px dashed var(--trait);border-radius:999px;padding:0 10px;white-space:nowrap;}
+.tele.arme{border-style:solid;border-color:var(--choix);color:var(--choix);font-weight:600;}
 .tele.attente{border-color:var(--faux);color:var(--faux);}
 #ecranNoir{position:fixed;inset:0;background:#000;z-index:1000;cursor:none;}
 .etapes{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;}
@@ -196,6 +197,7 @@ details.src summary{cursor:pointer;}
 .qz-fin{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);min-height:0;}
 .podium{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
 .pod{display:flex;align-items:center;gap:12px;background:var(--panneau-2);border-radius:12px;padding:10px 14px;font-size:var(--f-l);}
+.pod>span{min-width:1.6em;text-align:center;}
 .pod em{margin-left:auto;font-style:normal;font-size:var(--f);color:var(--texte-2);}
 
 /* ---------- classement ---------- */
@@ -784,7 +786,7 @@ function rangs(items,largeur){ const fins=[]; items.sort((a,b)=>a.x-b.x).forEach
 function flechettes(ctx,R,X,y0,dir,fs,g){
   if(!R.length) return; ctx.font=Math.round(fs*0.85)+'px '+POLICE;
   const it=R.map(r=>Object.assign({x:X(r.v)},r)).filter(r=>isFinite(r.x));
-  rangs(it,r=>ctx.measureText(r.nom).width);
+  rangs(it,r=>ctx.measureText((r.best?'★ ':'')+r.nom).width+6);
   const h=fs*1.05;
   it.forEach(r=>{ const x=Math.max(g.x+4,Math.min(g.x+g.w-4,r.x)), y=y0+dir*(r.rang*h+h*0.6);
     const col=r.best?css('--dose'):r.ok?css('--juste'):css('--faux');
@@ -885,7 +887,7 @@ function allerA(lv,etape){
   const a=document.querySelector('#nav .lv.actif'); if(a) a.scrollIntoView({block:'nearest',inline:'nearest'});
   const n=NIVEAUX.find(x=>x.id===lv);
   if(!n){ $('barreLv').innerHTML='<span class="num">Séance</span><h2>Classement</h2>'; montrer('CL',()=>vueClassement()); return; }
-  const etapes=n.modules.map((m,i)=>({k:'m'+i,lab:m.titre,ico:n.modules.length>1?['①','②','③'][i]:'🎮'})).concat([{k:'q',lab:'Quiz · '+n.quiz.length+' questions',ico:'✎',quiz:true}]);
+  const etapes=n.modules.map((m,i)=>({k:'m'+i,lab:(n.modules.length>1?(i+1)+'. ':'')+m.titre,ico:'🎮'})).concat([{k:'q',lab:'Quiz · '+n.quiz.length+' questions',ico:'✎',quiz:true}]);
   $('barreLv').innerHTML=`<div class="tlv"><div><span class="num">${n.bonus?n.num:'Level '+n.num+'/10'} · diapos ${n.diapos}</span><span class="tele" id="tele" hidden></span></div><h2>${n.titre}</h2></div><div class="etapes">`+
     etapes.map((e,i)=>`<button type="button" class="etape ${e.quiz?'quiz':''} ${i===ETAPE?'actif':''}" data-i="${i}"><span class="ico">${e.ico}</span>${e.lab}</button>`).join('')+'</div>';
   $('barreLv').querySelectorAll('.etape').forEach(b=>b.onclick=()=>allerA(lv,+b.dataset.i));
@@ -926,7 +928,7 @@ function vueModule(n,mod){
       const cl=(J.res?'fait ':'')+(J.actif?'encours ':'')+(op?'ouverte':'');
       let corps='';
       if(op){
-        const nb=Object.keys(D.roster||{}).length, nv=Object.keys(J.votes).length;
+        const nv=Object.keys(J.votes).length, nb=Math.max(nv,Object.keys(D.joined||{}).length); /* sur le nombre d'étudiants connectés */
         corps=`<div class="mcorps"><div class="mq">${m.texte}</div>`;
         if(m.type==='choix') corps+=`<div class="choix-m">`+m.choix.map((t,k)=>{ const c=Object.values(J.votes).filter(v=>v.c===k).length; const p=nv?100*c/nv:0;
           return `<div class="${J.revele&&k===m.r?'bon':''}">${J.revele&&LIVE.on?`<i style="width:${p}%"></i>`:''}<span class="forme f${k%6}">${FORMES[k%6]}</span><span>${t}</span>${J.revele&&LIVE.on?`<span class="n">${c}</span>`:''}</div>`; }).join('')+'</div>';
@@ -936,7 +938,7 @@ function vueModule(n,mod){
           if(J.res) corps+=`<span class="note">Manche corrigée</span>`; }
         else corps+=`<button class="btn plein" data-a="revl" type="button">${local[m.id]?'Masquer':'Révéler la réponse'}</button>`;
         corps+='</div>';
-        if(LIVE.on&&(J.actif||J.res)) corps+=`<div class="etat-live">${J.actif?'<b>En cours</b> · ':''}<b>${nv}</b> / ${nb} réponses<div class="progress"><i style="width:${nb?100*nv/nb:0}%"></i></div></div>`;
+        if(LIVE.on&&(J.actif||J.res)) corps+=`<div class="etat-live">${J.actif?'<b>En cours</b> · ':''}<b>${nv}</b> / ${nb} connectés ont répondu${nb&&nv>=nb?' ✓':''}<div class="progress"><i style="width:${nb?100*nv/nb:0}%"></i></div></div>`;
         if(J.revele){ corps+=`<div class="reponse"><div class="rv">${m.aff||(m.type==='choix'?m.choix[m.r]:'')}</div>${m.e||''}`;
           if(LIVE.on&&J.res){ const ok=Object.keys(J.res.ok||{}); const st=m.type==='estim'?statsEstim(J.votes):null;
             if(st) corps+=`<div class="stripw"><canvas class="strip"></canvas></div>`;
@@ -958,8 +960,8 @@ function vueModule(n,mod){
   function prochaine(){ const ms=mod.manches, k=ms.findIndex(x=>x.id===ouverte);
     if(k<0) return ms.length?{label:'Ouvrir la manche 1',faire:()=>ouvrir(ms[0].id)}:null;
     const m=ms[k], J=jeuDe(m);
-    if(LIVE.on){ if(J.actif) return {label:'Révéler et corriger',garde:true,faire:()=>corriger(m)};
-      if(!J.res) return {label:'📱 Lancer la manche '+(k+1),lance:true,faire:()=>lancer(m)}; }
+    if(LIVE.on){ if(J.actif) return {label:'Révéler et corriger',garde:true,confirmer:true,faire:()=>corriger(m)};
+      if(!J.res) return {label:'📱 Lancer la manche '+(k+1),lance:true,confirmer:true,faire:()=>lancer(m)}; }
     else if(!local[m.id]) return {label:'Révéler la réponse',faire:()=>{ local[m.id]=true; sonRevele(); majJeu(); }};
     if(k+1<ms.length) return {label:'Ouvrir la manche '+(k+2),faire:()=>ouvrir(ms[k+1].id)};
     return null; }
@@ -991,7 +993,7 @@ function vueQuiz(n){
   function rendre(){
     if(fin()) return rendreFin();
     const Q=n.quiz[i], q=qid(i), D=D_(), res=LIVE.on?(D.results||{})[q]:(local[i]?{r:Q.r}:null), actif=qActif()===q;
-    const vs=LIVE.on?((D.votes||{})[q]||{}):{}, nv=Object.keys(vs).length, nb=Object.keys(D.roster||{}).length;
+    const vs=LIVE.on?((D.votes||{})[q]||{}):{}, nv=Object.keys(vs).length, nb=Math.max(nv,Object.keys(D.joined||{}).length);
     const cpt=Q.c.map((_,k)=>Object.values(vs).filter(v=>v.c===k).length), mx=Math.max(1,...cpt);
     const rev=!!res, dEt=actif&&D.etat?D.etat.duree:0;
     el.innerHTML=`<div class="qz-haut"><span class="qz-num">Quiz · ${n.bonus?n.num:'Level '+n.num} · question ${i+1} / ${n.quiz.length}</span><div class="qz-dots">${n.quiz.map((_,k)=>`<i class="${(LIVE.on?(D.results||{})[qid(k)]:local[k])?'fait':''} ${k===i?'cur':''}" data-k="${k}" title="Question ${k+1}"></i>`).join('')}</div>
@@ -999,7 +1001,7 @@ function vueQuiz(n){
       <div class="qz-q">${Q.q}</div>
       <div class="qz-mid" style="${LIVE.on?'':'grid-template-columns:1fr'}"><div class="qz-rep">${Q.c.map((t,k)=>`<div class="tuile t${k%6} ${rev?(k===Q.r?'bonne':'eteinte'):''}"><span class="forme">${FORMES[k%6]}</span><span>${t}</span>${rev&&LIVE.on?`<span class="nb">${cpt[k]}</span><span class="barre" style="width:${100*cpt[k]/mx}%"></span>`:''}</div>`).join('')}</div>
       <div class="qz-cote" ${LIVE.on?'':'hidden'}>${dEt?`<div class="chrono" data-chrono><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="var(--grille)" stroke-width="8"/><circle class="p" cx="50" cy="50" r="45" fill="none" stroke="var(--dose)" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round"/></svg><div class="val">${dEt}</div></div>`:''}
-        ${LIVE.on?`<div class="qz-stat"><span class="note">Réponses</span><b>${nv} / ${nb}</b></div>`:''}
+        ${LIVE.on?`<div class="qz-stat"><span class="note">Réponses / connectés</span><b>${nv} / ${nb}${nb&&nv>=nb?' ✓':''}</b></div>`:''}
         ${rev&&LIVE.on&&res.best?`<div class="qz-stat"><span class="note">Le plus rapide</span><b style="font-size:var(--f-l)">⚡ ${echapper(nomDe(res.best))}</b></div>`:''}
         <div class="top5" hidden></div></div></div>
       ${rev?`<div class="qz-expl"><b>${Q.c[Q.r]}</b> — ${Q.e} <span class="src-d">${Q.d?'(diapo '+Q.d+')':''}</span></div>`:''}
@@ -1010,7 +1012,7 @@ function vueQuiz(n){
     el.querySelectorAll('.qz-dots i').forEach(d=>d.onclick=()=>{ i=+d.dataset.k; rendre(); });
     el.querySelector('#qzDur').onchange=ev=>{ duree=+ev.target.value; try{ localStorage.setItem('hadron_duree',duree); }catch(e){} };
     el.querySelector('#qzPrec').onclick=()=>{ i--; rendre(); };
-    el.querySelector('#qzSuiv').onclick=()=>{ i++; rendre(); };
+    el.querySelector('#qzSuiv').onclick=()=>{ i++; rendre(); lancerCourante(); };
     const corr=()=>liveCorriger(q,Object.assign(corrigerChoix((D_().votes||{})[q]||{},Q.r),{r:Q.r,aff:Q.c[Q.r]}));
     CORRECTEURS[q]=corr;
     const bl=el.querySelector('#qzLance'); if(bl) bl.onclick=()=>liveLancer(q,{type:'choix',lv:'Quiz · '+(n.bonus?n.num:'Level '+n.num),texte:Q.q,choix:Q.c,duree});
@@ -1025,8 +1027,7 @@ function vueQuiz(n){
     const nq=n.quiz.length, tx=n.quiz.map((Q,k)=>{ const vs=(D.votes||{})[qid(k)]||{}, nv=Object.keys(vs).length; return nv?Math.round(100*Object.values(vs).filter(v=>v.c===Q.r).length/nv):null; });
     el.innerHTML=`<div class="qz-haut"><span class="qz-num">Bilan · ${n.bonus?n.num:'Level '+n.num} · ${n.titre}</span></div><div class="qz-fin">
       <div class="carte"><h3>Podium du level</h3>${LIVE.on&&Lv.length&&pts[Lv[0].id]?'<div class="podium">'+Lv.slice(0,3).map((e,k)=>`<div class="pod"><span>${['🥇','🥈','🥉'][k]}</span><b>${echapper(e.nom)}</b><em>${pts[e.id]} pts</em></div>`).join('')+'</div>':'<p class="note">Le podium s\'affiche en mode live.</p>'}</div>
-      <div class="carte"><h3>Questions</h3><table class="fiche"><thead><tr><th>#</th><th>Question</th><th>Bonnes réponses</th></tr></thead><tbody>${n.quiz.map((Q,k)=>`<tr><td>${k+1}</td><td>${Q.q}</td><td>${tx[k]==null?'—':tx[k]+' %'}</td></tr>`).join('')}</tbody></table>
-      <p class="note">Les questions les moins réussies sont à reprendre avant le level suivant.</p></div></div>
+      <div class="carte"><h3>Questions</h3><table class="fiche"><thead><tr><th>#</th><th>Question</th><th>Bonnes réponses</th></tr></thead><tbody>${n.quiz.map((Q,k)=>`<tr><td>${k+1}</td><td>${Q.q}</td><td>${tx[k]==null?'—':tx[k]+' %'}</td></tr>`).join('')}</tbody></table></div></div>
       <div class="qz-bas"><button class="btn" id="qzRet" type="button">◀ Revenir aux questions</button><div class="droite">${NIVEAUX.indexOf(n)<NIVEAUX.length-1?`<button class="btn plein grand" id="qzNext" type="button">Level suivant ▶</button>`:`<button class="btn plein grand" id="qzCl" type="button">Classement final ★</button>`}</div></div>`;
     el.querySelector('#qzRet').onclick=()=>{ i=nq-1; rendre(); };
     const bn=el.querySelector('#qzNext'); if(bn) bn.onclick=()=>allerA(NIVEAUX[NIVEAUX.indexOf(n)+1].id,0);
@@ -1034,12 +1035,15 @@ function vueQuiz(n){
   }
   function prochaine(){ if(fin()) return null;
     const q=qid(i), D=D_(), res=LIVE.on?(D.results||{})[q]:local[i], actif=qActif()===q, clic=s=>()=>{ const b=el.querySelector(s); if(b) b.click(); };
-    if(LIVE.on){ if(actif) return {label:'Révéler et corriger',garde:true,faire:clic('#qzRev')};
-      if(!res) return {label:'📱 Lancer la question '+(i+1),lance:true,faire:clic('#qzLance')}; }
+    if(LIVE.on){ if(actif) return {label:'Révéler et corriger',garde:true,confirmer:true,faire:clic('#qzRev')};
+      if(!res) return {label:'📱 Lancer la question '+(i+1),lance:true,confirmer:true,faire:clic('#qzLance')};
+      if(i<n.quiz.length-1) return {label:'📱 Question suivante, lancée aussitôt',lance:true,confirmer:true,faire:()=>{ i++; rendre(); lancerCourante(); }}; }
     else if(!res) return {label:'Révéler la réponse',faire:clic('#qzRevL')};
     return {label:i<n.quiz.length-1?'Question '+(i+2):'Bilan du quiz',faire:()=>{ i++; rendre(); }}; }
+  /* en live, une question affichée est lancée tout de suite sur les téléphones */
+  function lancerCourante(){ if(!LIVE.on||fin()) return; const q=qid(i); if((D_().results||{})[q]||qActif()===q) return; const b=el.querySelector('#qzLance'); if(b) b.click(); }
   function precedent(){ if(fin()){ i=n.quiz.length-1; rendre(); return true; } if(i>0){ i--; rendre(); return true; } return false; }
-  return {el,afficher:rendre,rafraichir:rendre,prochaine,precedent};
+  return {el,afficher:rendre,rafraichir:rendre,prochaine,precedent,lancerCourante};
 }
 
 /* ---------- classement ---------- */
@@ -1054,7 +1058,7 @@ function vueClassement(){
      <div class="tab-cl"><table class="fiche"><thead><tr><th>Rang</th><th>Étudiant</th>${nvx.map(n=>`<th title="${echapper(n.titre)}">${n.bonus?n.num:'L'+n.num}</th>`).join('')}<th>Bonus</th><th>Total</th></tr></thead><tbody>${L.map(e=>`<tr><td>${e.rang}</td><td>${echapper(e.nom)}</td>${nvx.map(n=>`<td>${e.m[n.id]||0}</td>`).join('')}<td>${e.bonus}</td><td><b>${e.tot}</b></td></tr>`).join('')}</tbody></table></div>`;
     el.querySelector('#btnCSV').onclick=()=>{ const lig=[['Rang','Etudiant',...nvx.map(n=>(n.bonus?n.num:'L'+n.num)),'Bonus','Total'],...L.map(e=>[e.rang,e.nom,...nvx.map(n=>e.m[n.id]||0),e.bonus,e.tot])];
       const blob=new Blob(['﻿'+lig.map(r=>r.join(';')).join('\n')],{type:'text/csv'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='classement_'+LIVE.code+'.csv'; a.click(); };
-    as.innerHTML='<h3>Podium</h3><div class="podium">'+L.slice(0,3).map((e,i)=>`<div class="pod"><span>${['🥇','🥈','🥉'][i]}</span><b>${echapper(e.nom)}</b><em>${e.tot} pts</em></div>`).join('')+'</div>'+
+    as.innerHTML='<h3>Top 5</h3><div class="podium">'+L.filter(e=>e.tot>0).slice(0,5).map(e=>`<div class="pod"><span>${['🥇','🥈','🥉'][e.rang-1]||e.rang+'<sup>e</sup>'}</span><b>${echapper(e.nom)}</b><em>${e.tot} pts</em></div>`).join('')+'</div>'+
       '<h3 style="margin-top:12px">Meilleur par level</h3><table class="fiche">'+nvx.map(n=>{ const t=[...L].sort((a,b)=>(b.m[n.id]||0)-(a.m[n.id]||0))[0]; return `<tr><td>${n.num} ${n.court}</td><td>${t&&t.m[n.id]?echapper(t.nom)+' ('+t.m[n.id]+')':'—'}</td></tr>`; }).join('')+'</table>';
   }
   return {el,afficher:rendre,rafraichir:rendre};
@@ -1163,16 +1167,23 @@ function etapeVoisine(sens){ const i=NIVEAUX.findIndex(n=>n.id===NIV); if(i<0) r
   return [NIVEAUX[k],j]; }
 function actionTele(){ const v=vueCourante(); const p=v&&v.prochaine?v.prochaine():null; if(p) return p;
   const e=etapeVoisine(1); if(!e) return null; const [n2,j]=e;
-  return {label:(n2.id!==NIV?(n2.bonus?n2.num:'Level '+n2.num)+' · ':'')+(j<n2.modules.length?n2.modules[j].titre:'Quiz'),faire:()=>allerA(n2.id,j)}; }
-let teleT=0, teleLance=0;
-function telecommande(sens){ const now=Date.now(); if(now-teleT<450) return; teleT=now;
+  const pre=(n2.id!==NIV?(n2.bonus?n2.num:'Level '+n2.num)+' · ':'');
+  if(j>=n2.modules.length&&LIVE.on) return {label:pre+'Quiz, 📱 question 1 lancée aussitôt',lance:true,confirmer:true,faire:()=>{ allerA(n2.id,j); const v=vueCourante(); if(v&&v.lancerCourante) v.lancerCourante(); }};
+  return {label:pre+(j<n2.modules.length?n2.modules[j].titre:'Quiz'),faire:()=>allerA(n2.id,j)}; }
+/* Les actions qui agissent sur les téléphones (lancer, révéler) demandent un double appui :
+   1er appui = préparer (l'indication passe en couleur), 2e appui dans les 3 s = exécuter. */
+let teleT=0, teleLance=0, teleArme=null;
+function telecommande(sens){ const now=Date.now(); if(now-teleT<120) return; teleT=now;
   if(sens>0){ const p=actionTele(); if(!p) return;
-    if(p.garde&&now-teleLance<2500){ const t=$('tele'); if(t){ t.classList.add('attente'); setTimeout(()=>t.classList.remove('attente'),600); } return; } /* évite de corriger aussitôt après avoir lancé (double appui) */
-    if(p.lance) teleLance=now; p.faire(); }
-  else { const v=vueCourante(); if(!(v&&v.precedent&&v.precedent())){ const e=etapeVoisine(-1); if(e) allerA(e[0].id,e[1]); } }
+    if(p.garde&&now-teleLance<2500){ teleArme=null; const t=$('tele'); if(t){ t.classList.add('attente'); setTimeout(()=>t.classList.remove('attente'),600); } return; } /* évite de corriger aussitôt après avoir lancé */
+    if(p.confirmer&&!(teleArme&&teleArme.label===p.label&&now-teleArme.t<3000)){ teleArme={label:p.label,t:now}; majTele(); setTimeout(majTele,3050); return; }
+    teleArme=null; if(p.lance) teleLance=now; p.faire(); }
+  else { teleArme=null; const v=vueCourante(); if(!(v&&v.precedent&&v.precedent())){ const e=etapeVoisine(-1); if(e) allerA(e[0].id,e[1]); } }
   setTimeout(majTele,60); }
-function majTele(){ const t=$('tele'); if(!t) return; let p=null; try{ p=actionTele(); }catch(e){} const s=p?'▶ '+p.label:'';
-  if(t.textContent!==s) t.textContent=s; t.hidden=!s; }
+function majTele(){ const t=$('tele'); if(!t) return; let p=null; try{ p=actionTele(); }catch(e){}
+  const arme=!!(p&&teleArme&&teleArme.label===p.label&&Date.now()-teleArme.t<3000);
+  const s=p?(arme?'▶▶ Appuyez encore : '+p.label:'▶ '+p.label+(p.confirmer?' · double appui':'')):'';
+  if(t.textContent!==s) t.textContent=s; t.hidden=!s; t.classList.toggle('arme',arme); }
 function initTelecommande(){
   const noir=document.createElement('div'); noir.id='ecranNoir'; noir.hidden=true; document.body.appendChild(noir);
   noir.onclick=()=>{ noir.hidden=true; };
@@ -1211,32 +1222,33 @@ const mod={id:'a',titre:'La frise de l\'hadronthérapie',
   html:`<div class="titre-graphe"><h3>La frise de l'hadronthérapie</h3><span class="note" id="l1note">Les événements apparaissent au fil des manches.</span></div>
     <div class="graphe"><canvas id="cvFrise" aria-label="Frise chronologique de l'hadronthérapie"></canvas></div>
     <div class="chips" id="l1chips"></div>`,
-  sources:'Diapos 5 à 16 (historique, centres en France). Patients traités : PTCOG, synthèse 1954-2022 (diapo 8).',
+  sources:'Diapos 5 à 16 (historique, centres en France). Patients traités : PTCOG, synthèse 1954-2022 (diapo 8). Carbonethérapie : 4 centres en Europe, Japon leader mondial (diapo 16).',
   manches:[
     an('a1',1954,3,'En quelle année le <b>premier patient</b> a-t-il été traité par protons (Berkeley) ?','1er patient (protons)','Berkeley, 1954 : irradiation de l\'hypophyse en utilisant le pic de Bragg, 8 ans après la proposition de Wilson.'),
     an('a2',1931,3,'En quelle année Ernest O. Lawrence construit-il le <b>premier cyclotron</b> ?','1er cyclotron','1931 : protons de 80 keV. Lawrence reçoit le prix Nobel en 1939. Le principe du cyclotron est au cœur du level 2.'),
     an('a3',1994,3,'En quelle année le <b>premier patient</b> est-il traité par <b>ions carbone</b> (HIMAC, Japon) ?','1er patient (carbone)','HIMAC (Chiba), 1994, ions C jusqu\'à 400 MeV/u (≈ 27 cm dans l\'eau). Le Japon reste le leader mondial de la carbonethérapie ; 4 centres en Europe.'),
     an('a4',2018,2,'En quelle année le centre de Caen a-t-il traité ses premiers patients en <b>PBS</b> (Proteus One) ?','Caen en PBS','2018 : une salle avec bras isocentrique compact et synchrocyclotron S2C2. Orsay (2014) et Nice (2016) traitaient déjà en IMPT.'),
-    {id:'a5',type:'estim',titre:'Patients traités (2022)',texte:'Combien de patients ont été traités par hadronthérapie <b>dans le monde</b>, de 1954 à fin 2022 ?',min:1000,max:1e7,log:true,def:30000,unite:'patients',r:361549,
-     juste:v=>v>=270000&&v<=450000,ecart:v=>Math.abs(Math.log(v/361549)),bande:[270000,450000],aff:'≈ 360 000 patients',masque:true,
-     e:'≈ 311 000 en protons et ≈ 47 000 en ions carbone, soit ≈ 1 % des patients traités par radiothérapie dans le monde (PTCOG, diapo 8). Plus de 130 centres sont en activité.'},
+    {id:'a5',type:'estim',titre:'Carbonethérapie en Europe',texte:'Combien de centres de <b>carbonethérapie</b> (ions carbone) sont en activité <b>en Europe</b> ?',min:0,max:15,pas:1,dec:0,def:1,unite:'centres',r:4,tol:0,aff:'4 centres',masque:true,
+     e:'4 centres : HIT (Heidelberg) et MIT (Marburg) en Allemagne, CNAO (Pavie, Italie) et MedAustron (Wiener Neustadt, Autriche). Le Japon est le leader mondial (diapo 16). En France, le C400 de Caen est en développement.'},
   ],
   init(){ observer(['cvFrise'],()=>this.redessiner()); },
   redessiner(){
     const J=this.jeu, P0=prep($('cvFrise')); if(!P0) return; const {c:ctx,W,H}=P0, fs=taillePolice(H,0.04,12,20);
-    const m=J&&J.m, logR=m&&m.id==='a5';
+    const m=J&&J.m, carbR=m&&m.id==='a5';
     const vus=new Set(this.manches.filter(x=>x.vu).map(x=>x.id)); if(J&&J.revele) vus.add(m.id);
     const RS=D_().results||{}; this.manches.forEach(x=>{ if(RS['L1_'+this.id+x.id]) vus.add(x.id); });
     if(J&&J.revele) m.vu=true;
     $('l1note').textContent=m?(J.revele?'Réponse révélée.':'Question en cours : répondez sur votre téléphone.'):'Les événements apparaissent au fil des manches.';
-    if(logR){ /* axe logarithmique du nombre de patients */
-      const g={x:fs*3,y:fs*2,w:W-fs*6.5,h:H-fs*5}, X=v=>g.x+Math.log10(v/1000)/4*g.w, y0=g.y+g.h*0.45;
+    if(carbR){ /* axe du nombre de centres de carbonethérapie en Europe */
+      const g={x:fs*2,y:fs*2,w:W-fs*4,h:H-fs*5}, X=v=>g.x+v/15*g.w, y0=g.y+g.h*0.45;
+      etiquette(ctx,'Centres de carbonethérapie en activité en Europe',g.x,g.y,css('--texte'),fs,'left');
       ctx.strokeStyle=css('--texte-2'); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(g.x,y0); ctx.lineTo(g.x+g.w,y0); ctx.stroke();
-      [1e3,1e4,1e5,1e6,1e7].forEach(v=>{ ctx.beginPath(); ctx.moveTo(X(v),y0-6); ctx.lineTo(X(v),y0+6); ctx.stroke(); etiquette(ctx,v.toLocaleString('fr-FR'),X(v),y0+fs*1.2,css('--texte-2'),fs,'center'); });
-      etiquette(ctx,'Nombre de patients traités dans le monde (échelle logarithmique)',g.x,g.y,css('--texte'),fs,'left');
-      if(J.revele){ [[311252,'protons',css('--dose')],[46710,'ions carbone',css('--S')],[361549,'total',css('--juste')]].forEach(([v,l,c],k)=>{ ctx.strokeStyle=c; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(X(v),y0-fs*(2.2+k*1.3)); ctx.lineTo(X(v),y0); ctx.stroke(); etiquette(ctx,l+' : '+v.toLocaleString('fr-FR'),X(v)+4,y0-fs*(2.2+k*1.3),c,fs,'left'); });
-        flechettes(ctx,reponses(this),X,y0+fs*2.2,1,fs,g); }
-      chips('l1chips',[['Protons (1954-2022)','≈ 311 000',!J.revele],['Ions carbone','≈ 47 000',!J.revele],['Part des patients en RT','≈ 1 %',!J.revele],['Centres en activité','> 130',false]]);
+      for(let v=0;v<=15;v++){ ctx.beginPath(); ctx.moveTo(X(v),y0-6); ctx.lineTo(X(v),y0+6); ctx.stroke(); etiquette(ctx,String(v),X(v),y0+fs*1.2,css('--texte-2'),fs,'center'); }
+      if(J.revele){ ctx.strokeStyle=css('--juste'); ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(X(4),y0-fs*2.2); ctx.lineTo(X(4),y0); ctx.stroke();
+        etiquette(ctx,'4 centres',X(4)+6,y0-fs*2.2,css('--juste'),fs,'left');
+        texteLignes(ctx,'HIT (Heidelberg) · MIT (Marburg) · CNAO (Pavie) · MedAustron (Wiener Neustadt). Le Japon est le leader mondial.',g.x,g.y+g.h-fs*0.5,css('--texte-2'),Math.round(fs*0.9),g.w);
+        flechettes(ctx,reponses(this),X,y0+fs*2.4,1,fs,g); }
+      chips('l1chips',[['Carbonethérapie en Europe','4 centres',!J.revele],['Leader mondial','Japon',!J.revele],['Centres en activité (monde)','> 130'],['Patients traités (2022)','≈ 360 000']]);
       return;
     }
     const g={x:fs*1.5,y:fs,w:W-fs*3,h:H-fs*2}, a0=1900, a1=2032, X=a=>g.x+(a-a0)/(a1-a0)*g.w, y0=g.y+g.h*0.7;
@@ -1259,7 +1271,7 @@ const mod={id:'a',titre:'La frise de l\'hadronthérapie',
         ctx.fillText(l,r.x+(r.droite?-5:5),r.yb-(r.lignes.length-1-k)*hL); }); });
     if(m&&!J.revele){ etiquette(ctx,'?',X(1960),y0+fs*1.9,css('--choix'),fs*2,'center','top'); }
     if(J&&J.revele) flechettes(ctx,reponses(this),X,y0+fs*2.4,1,fs,g);
-    chips('l1chips',[['Patients traités (2022)','≈ 360 000',!vus.has('a5')],['Centres en activité (monde)','> 130'],['Centres en Europe (PTCOG 2021)','28'],['Carbonethérapie en Europe','4 centres']]);
+    chips('l1chips',[['Patients traités (2022)','≈ 360 000'],['Centres en activité (monde)','> 130'],['Centres en Europe (PTCOG 2021)','28'],['Carbonethérapie en Europe','4 centres',!vus.has('a5')]]);
   }
 };
 NIVEAUX.push({id:'L1',num:'1',court:'Intro',titre:'Introduction',diapos:'1-25',modules:[mod],quiz:[
@@ -1269,110 +1281,72 @@ NIVEAUX.push({id:'L1',num:'1',court:'Intro',titre:'Introduction',diapos:'1-25',m
    e:'Propriétés physiques (parcours fini, dose intégrale diminuée) et biologiques (haute densité d\'ionisation). Conséquence : toxicité limitée et moins de seconds cancers, d\'où l\'intérêt en pédiatrie.'},
   {q:'Dans le vocabulaire du cours, H (proton) et He sont des…',c:['ions légers','ions lourds','hadrons neutres','leptons'],r:0,d:'20',
    e:'H et He : ions légers ; C, O, Ne… : ions lourds. Le proton est ≈ 2000 fois plus lourd que l\'électron.'},
-  {q:'Proteus One de Caen : quelle affirmation est exacte ?',c:['Bras isocentrique rotatif sur 360°','Énergie en sortie de 98,4 à 226 MeV','Taille de champ maximale de 40 × 40 cm','Imagerie IRM embarquée'],r:1,d:'22',
-   e:'Bras compact sur 223° (−35 à +188°), champ maximal 20 × 24 cm, imagerie kV/kV oblique (CBCT en option), range shifter en tiroir.'},
+  {q:'Proteus One : quelle affirmation est exacte ?',c:['Bras isocentrique compact à rotation limitée (223°)','Bras isocentrique rotatif sur 360°','Taille de champ maximale de 40 × 40 cm','Imagerie IRM embarquée'],r:0,d:'22',
+   e:'Bras compact sur 223° (−35 à +188°), table 6D, imagerie kV/kV oblique (CBCT en option), champ maximal 20 × 24 cm.'},
 ]});
 })();
 
 /* ===================== Level 2 : Production des faisceaux ===================== */
 (function(){
-/* ---------- Module A : fréquence de révolution et champ ---------- */
-const MACH={
-  classique:{nom:'Cyclotron classique',A:1,Z:1,M:MP,B0:1.5,Wmax:25,unite:'MeV',b:()=>1,rf:'fixe'},
-  s2c2:{nom:'Synchrocyclotron S2C2',A:1,Z:1,M:MP,B0:5.74,Wmax:230,unite:'MeV',b:(W,m)=>1-0.094*pcDe(1,MP,W)/pcDe(1,MP,230),rf:'module'},
-  c400:{nom:'Cyclotron isochrone C400',A:12,Z:6,M:MC,B0:2.43,Wmax:400,unite:'MeV/u',b:(W,m)=>gamA(m.A,m.M,W),rf:'fixe'},
-};
-const gam=(m,W)=>gamA(m.A,m.M,W);
-const frev=(m,W)=>15.2457*m.Z*m.B0*m.b(W,m)*(MP/m.M)/gam(m,W);
-function glissement(Vkv,phi0){ let W=0, ph=phi0, n=0; const pts=[[0,ph]];
-  while(n<200000){ const g=Math.cos(ph*Math.PI/180); if(g<=0) break; W+=2*Vkv/1000*g; ph+=360*(W/MP); n++; if(n%5===0) pts.push([W,ph]); if(ph>=90){pts.push([W,90]);break;} }
-  return {pts,Wmax:W,tours:n}; }
-let mach='classique';
-const modA={id:'a',titre:'Cyclotron ou synchrocyclotron ?',
-  html:`<div class="titre-graphe"><h3>Accélérer : fréquence de révolution et champ magnétique</h3>
-      <div class="seg" id="l2mach"><button type="button" data-v="classique" class="actif">Cyclotron classique (B uniforme)</button><button type="button" data-v="s2c2">Synchrocyclotron S2C2 (p)</button><button type="button" data-v="c400">Isochrone C400 (¹²C⁶⁺)</button></div></div>
-    <div class="legende"><span class="l l-dose">f de révolution des ions</span><span class="l l-phi">f de la RF (tirets)</span><span class="l l-S">B sur l'orbite (pointillés, axe de droite)</span><span class="note" id="l2info" style="margin-left:auto"></span></div>
-    <div class="graphe g13"><canvas id="cvFreq" aria-label="Fréquence de révolution et champ en fonction de l'énergie"></canvas></div>
-    <div class="chips" id="l2chips"></div>
-    <div class="graphe g2"><canvas id="cvTemps" aria-label="Structure temporelle ou glissement de phase"></canvas><div class="info" id="l2info2"></div></div>
-    <div class="cmd">
-      <div class="curseur"><label for="l2W"><span>Énergie atteinte</span> <output id="l2Wo"></output></label><input type="range" id="l2W" min="0" max="1" step="0.005" value="0.5"></div>
-      <div class="curseur"><label for="l2V"><span>Tension des dés (classique)</span> <output id="l2Vo"></output></label><input type="range" id="l2V" min="20" max="300" step="10" value="100"></div>
-      <div class="curseur"><label for="l2ph"><span>Phase d'injection (classique)</span> <output id="l2pho"></output></label><input type="range" id="l2ph" min="-90" max="0" step="5" value="0"></div>
-    </div>`,
-  sources:'f<sub>rév</sub> = QB / (2πγm). S2C2 (diapos 59-62) : RF 87,5 MHz à l\'injection, 63,7 MHz à l\'extraction, 1 kHz ; champ central 5,74 T (≈ 5,7 T de la fiche IBA), supposé décroître de 9,4 % vers l\'extraction (valeur ajustée pour retrouver 63,7 MHz). C400 (diapo 52) : 2,43 T au centre, isochronisme B = γB₀ → 3,47 T à 400 MeV/u (3,46 T dans la diapo). Cyclotron classique : RF fixe, gain 2·V·cos φ par tour.'+SRC_PEDA,
+/* ---------- Module A : choisir son accélérateur (synthèse, diapo 70) ---------- */
+const MACHS=['Cyclotron isochrone','Synchrocyclotron','Synchrotron'];
+/* lignes du tableau de synthèse : [critère, [isochrone, synchrocyclotron, synchrotron], manche qui la dévoile, colonne(s) à surligner] */
+const SYN=[
+  ['Exemples',['C230 (IBA), ProBeam','S2C2 (IBA), Mevion','HIT, CNAO, HIMAC'],null],
+  ['Champ B',['constant, ↑ avec le rayon','constant, ↓ avec le rayon','↑ avec le temps, rayon fixe'],null],
+  ['Fréquence RF',['fixe','modulée (1 kHz)','modulée'],null],
+  ['Encombrement',['Ø 3-4,3 m ; 90-220 t','Ø 1,8-2,5 m ; 20-50 t','anneau Ø ~20-25 m'],'1',[1]],
+  ['Ions',['p (C400 : p à Ne)','p','p, He, C, O…'],'2',[2]],
+  ['Énergie extraite',['fixe → dégradeur + ESS','fixe → dégradeur + ESS','variable cycle à cycle'],'3',[2]],
+  ['Dispersion en énergie',['≈ 1 % (avec dégradeur)','≈ 1 % (avec dégradeur)','≈ 0,1-0,2 %'],'3',[2]],
+  ['Intensité',['élevée (300-500 nA)','plus faible (~130 pC/pulse)','faible'],'4',[0]],
+  ['Faisceau',['continu','pulsé (~10 µs, 1 kHz)','pulsé (spills de qq s)'],'4',[0,1]],
+];
+const modA={id:'a',titre:'Choisis ton accélérateur',
+  consigne:'À chaque manche, un besoin de centre : chacun choisit l\'accélérateur sur son téléphone. Le tableau de synthèse se complète au fil des réponses.',
+  html:`<div class="titre-graphe"><h3>Choisis ton accélérateur</h3><span class="note" id="l2note"></span></div>
+    <div class="graphe g07"><canvas id="cvMach" aria-label="Encombrement des trois types d'accélérateurs, à l'échelle"></canvas></div>
+    <div style="overflow:auto;min-height:0;flex:0 1 auto"><table class="fiche" id="l2syn"></table></div>`,
+  sources:'Tableau de synthèse des accélérateurs (diapo 70). Encombrement à l\'échelle avec les valeurs hautes de la diapo (Ø 4,3 m, Ø 2,5 m, anneau Ø 22 m).'+SRC_PEDA,
   manches:[
-    {id:'1',type:'estim',titre:'RF du S2C2 à l\'extraction',masque:true,texte:'Synchrocyclotron S2C2 : la RF vaut <b>87,5 MHz à l\'injection</b>. Quelle fréquence à l\'<b>extraction</b> (230 MeV) ?',min:50,max:100,pas:0.5,dec:1,def:80,unite:'MHz',r:63.7,tol:2,aff:'63,7 MHz',
-     regler:()=>{ mach='s2c2'; segVal('l2mach','s2c2'); $('l2W').value=0; modA.redessiner(); },apres:()=>{ $('l2W').value=1; modA.redessiner(); },
-     e:'La relativité seule donnerait 87,5 / γ ≈ 70 MHz (γ ≈ 1,245 à 230 MeV). Le reste vient du champ qui <b>diminue avec le rayon</b> (focalisation faible, sans secteurs). La RF balaye ce cycle 1000 fois par seconde : faisceau pulsé.'},
-    {id:'2',type:'estim',titre:'Champ du C400 à l\'extraction',masque:true,texte:'Cyclotron isochrone C400 : 2,43 T au centre. Quel champ faut-il à l\'<b>extraction</b> (¹²C⁶⁺, 400 MeV/u) pour garder la même fréquence de révolution ?',min:2,max:5,pas:0.01,dec:2,def:2.43,unite:'T',r:3.46,tol:0.1,aff:'≈ 3,46 T',
-     regler:()=>{ mach='c400'; segVal('l2mach','c400'); $('l2W').value=0; modA.redessiner(); },apres:()=>{ $('l2W').value=1; modA.redessiner(); },
-     e:'Isochronisme : B(r) = γ·B₀ avec γ = 1 + 400×12/11 175 ≈ 1,43, d\'où ≈ 3,46 T. Ce gradient s\'obtient en jouant sur la largeur et l\'épaisseur des secteurs (entrefer de 12 cm au centre, 1,2 cm à l\'éjection) ; les secteurs collines-vallées assurent aussi la focalisation verticale.'},
+    {id:'1',type:'choix',titre:'Une salle, peu de place',texte:'Un hôpital veut <b>une seule salle</b> de protonthérapie et a <b>peu de place</b>. Quel accélérateur ?',choix:MACHS,r:1,
+     e:'Le synchrocyclotron supraconducteur est le plus compact : Ø 1,8 à 2,5 m et 20 à 50 t, contre 90 à 220 t pour un cyclotron isochrone et un anneau de 20 à 25 m pour un synchrotron. C\'est le cas du Proteus One de Caen (S2C2).'},
+    {id:'2',type:'choix',titre:'Traiter en ions carbone',texte:'Un centre veut traiter <b>dès aujourd\'hui</b> avec des <b>ions carbone</b> (et d\'autres ions). Quel accélérateur ?',choix:MACHS,r:2,
+     e:'Seul le synchrotron accélère aujourd\'hui p, He, C, O… (HIT, CNAO, HIMAC). Le cyclotron isochrone C400 (p à Ne) est en développement pour Caen.'},
+    {id:'3',type:'choix',titre:'Sans dégradeur',texte:'On veut <b>changer d\'énergie sans dégradeur</b>, avec un faisceau plus fin en énergie. Quel accélérateur ?',choix:MACHS,r:2,
+     e:'Le synchrotron extrait l\'énergie voulue, d\'un cycle à l\'autre. Les cyclotrons sortent une énergie fixe : il faut un dégradeur et un sélecteur d\'énergie (ESS), et la dispersion monte à ≈ 1 % contre 0,1 à 0,2 % (level 3).'},
+    {id:'4',type:'choix',titre:'Forte intensité',texte:'On veut le <b>faisceau le plus intense</b>, et <b>continu</b>. Quel accélérateur ?',choix:MACHS,r:0,
+     e:'Le cyclotron isochrone délivre un faisceau continu de forte intensité (300 à 500 nA). Le synchrocyclotron donne des pulses (~130 pC chacun, 1 000 par seconde) et le synchrotron des spills de quelques secondes, d\'intensité faible.'},
+    {id:'5',type:'choix',titre:'Faisceau pulsé et PBS',texte:'S2C2 : faisceau <b>pulsé</b> (~10 µs toutes les 1 ms). Conséquence pour le <b>balayage</b> (PBS) ?',
+     choix:['Aucune : on travaille comme avec un faisceau continu','Chaque spot se construit pulse par pulse : la charge de chaque pulse doit être régulée','Chaque spot doit être délivré en un seul pulse','Le PBS est impossible : il faut la double diffusion'],r:1,
+     e:'Un spot reçoit plusieurs pulses dont la charge varie d\'un pulse à l\'autre : la dose est régulée pulse par pulse. C\'est le jeu du module suivant, « le golfeur aveugle ».'},
   ],
-  init(){ seg('l2mach',v=>{ mach=v; this.redessiner(); }); ['l2W','l2V','l2ph'].forEach(n=>$(n).addEventListener('input',()=>this.redessiner())); observer(['cvFreq','cvTemps'],()=>this.redessiner()); },
+  init(){ observer(['cvMach'],()=>this.redessiner()); },
   redessiner(){
-    const m=MACH[mach], W=m.Wmax*+$('l2W').value, V=+$('l2V').value, f0=+$('l2ph').value, cach=cache(this), J=this.jeu;
-    $('l2Wo').textContent=fr(W,0)+' '+m.unite; $('l2Vo').textContent=V+' kV'; $('l2pho').textContent=f0+'°';
-    $('l2V').disabled=$('l2ph').disabled=mach!=='classique';
-    const g=gam(m,W), be=Math.sqrt(1-1/(g*g)), pc=pcDe(m.A,m.M,W), Brho=pc/(299.792458*m.Z), B=m.B0*m.b(W,m);
-    chips('l2chips',[['γ',fr(g,3)],['β = v/c',fr(be,3)],['Impulsion',fr(pc,0)+' MeV/c'],['Bρ',fr(Brho,2)+' T·m'],['B sur l\'orbite',fr(B,2)+' T',cach],['f révolution',fr(frev(m,W),2)+' MHz',cach]]);
-    const fi=frev(m,0), fe=frev(m,m.Wmax);
-    $('l2info').innerHTML=cach?'':mach==='classique'?`f<sub>RF</sub> fixe <b>${fr(fi,2)} MHz</b>, f<sub>rév</sub> à ${m.Wmax} MeV <b>${fr(fe,2)} MHz</b> : désynchronisation`
-      : mach==='s2c2'?`f<sub>RF</sub> modulée <b>${fr(fi,1)} → ${fr(fe,1)} MHz</b>, faisceau pulsé` : `f<sub>rév</sub> constante <b>${fr(fi,2)} MHz</b>, B ${fr(m.B0,2)} → <b>${fr(m.B0*gam(m,m.Wmax),2)} T</b>, faisceau continu`;
-    let P0=prep($('cvFreq'));
-    if(P0){ const {c:ctx,W:Wd,H}=P0, fs=taillePolice(H,0.05,11,17);
-      const gr={x:fs*3.6,y:fs*0.7,w:Wd-fs*3.6-fs*3.6,h:H-fs*0.7-fs*3};
-      const lo=Math.floor(Math.min(fi,fe,mach==='s2c2'?55:fi)*0.9), hi=Math.ceil(Math.max(fi,fe)*1.07);
-      const X=w=>gr.x+w/m.Wmax*gr.w, Y=f=>gr.y+gr.h-(f-lo)/(hi-lo)*gr.h;
-      const bmin=Math.min(m.b(0,m),m.b(m.Wmax,m))*m.B0, bmax=Math.max(m.b(0,m),m.b(m.Wmax,m))*m.B0, blo=Math.max(0,Math.min(bmin,mach==='c400'?2:bmin)*0.9), bhi=Math.max(bmax,mach==='c400'?5:bmax)*1.05+0.01, YB=b=>gr.y+gr.h-(b-blo)/(bhi-blo)*gr.h;
-      const pas=pas125(hi-lo,6), yt=[]; for(let v=Math.ceil(lo/pas)*pas;v<=hi;v+=pas) yt.push([v,Y(v),v]);
-      const px=pas125(m.Wmax,10), xt=[]; for(let w=0;w<=m.Wmax+1e-9;w+=px) xt.push([w,X(w),w]);
-      axes(ctx,gr,fs,xt,yt,'Énergie cinétique ('+m.unite+')','Fréquence (MHz)');
-      ctx.fillStyle=css('--S');ctx.textAlign='left';ctx.textBaseline='middle';
-      for(let k=0;k<=4;k++){const b=blo+(bhi-blo)*k/4; ctx.fillText(fr(b,2),gr.x+gr.w+6,YB(b));}
-      ctx.save();ctx.translate(Wd-fs*0.8,gr.y+gr.h/2);ctx.rotate(Math.PI/2);ctx.textAlign='center';ctx.fillText('B sur l\'orbite (T)',0,0);ctx.restore();
-      const courbe=(f,YY,wmax)=>{ const pts=[]; for(let k=0;k<=200;k++){ const w=(wmax==null?m.Wmax:wmax)*k/200; pts.push([X(w),(YY||Y)(f(w))]); } return pts; };
-      const fin=cach?0:m.Wmax;
-      trait(ctx,courbe(w=>m.B0*m.b(w,m),YB,mach==='c400'&&cach?0:m.Wmax),css('--S'),2,[3,3]);
-      trait(ctx,courbe(w=>m.rf==='fixe'?fi:frev(m,w),null,mach==='s2c2'&&cach?0:m.Wmax),css('--phi'),2.5,[8,4]);
-      trait(ctx,courbe(w=>frev(m,w),null,fin),css('--dose'),3);
-      rond(ctx,X(cach?0:W),Y(frev(m,cach?0:W)),6,css('--dose'));
-      if(cach){ etiquette(ctx,'?',X(m.Wmax)-fs,mach==='c400'?YB(3.5):Y((lo+hi)/2),css('--choix'),fs*2.2,'center'); }
-      /* réponses de la salle, sur l'axe concerné, à l'énergie d'extraction */
-      const R=reponses(this);
-      if(R.length&&J&&J.m){ const YY=J.m.id==='2'?YB:Y; ctx.font=Math.round(fs*0.85)+'px '+POLICE; const it=R.map(r=>Object.assign({y:YY(r.v)},r)).sort((a,b)=>a.y-b.y); let last=-1e9;
-        it.forEach(r=>{ const col=r.best?css('--dose'):r.ok?css('--juste'):css('--faux'); rond(ctx,X(m.Wmax)-4,r.y,4,col); const ly=Math.max(r.y,last+fs*0.95); last=ly; ctx.fillStyle=col; ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.fillText((r.best?'★ ':'')+r.nom+' '+fmtVal(r.v,J.m),X(m.Wmax)-12,ly); }); }
-    }
-    /* bas : glissement de phase (classique) ou structure temporelle (S2C2 / C400) */
-    P0=prep($('cvTemps'));
-    if(P0){ const {c:ctx,W:Wd,H}=P0, fs=taillePolice(H,0.065,11,16);
-      if(mach==='classique'){
-        const G=glissement(V,f0), Gref=glissement(V,0);
-        $('l2info2').innerHTML=`Énergie maximale : <b>${fr(G.Wmax,1)} MeV</b> en ${G.tours} tours`;
-        const gr={x:fs*4.6,y:fs*1.6,w:Wd-fs*4.6-fs*1.5,h:H-fs*1.6-fs*3}, wm=30, X=w=>gr.x+Math.min(w,wm)/wm*gr.w, Y=ph=>gr.y+gr.h/2-ph/100*(gr.h/2);
-        ctx.fillStyle=css('--faux');ctx.globalAlpha=.08;ctx.fillRect(gr.x,gr.y,gr.w,Y(90)-gr.y);ctx.fillRect(gr.x,Y(-90),gr.w,gr.y+gr.h-Y(-90));ctx.globalAlpha=1;
-        axes(ctx,gr,fs,[0,5,10,15,20,25,30].map(v=>[v,X(v),v]),[-90,-45,0,45,90].map(v=>[v,Y(v),(v<0?'−'+(-v):v)+'°']),'Énergie des protons (MeV)','Phase / RF');
-        etiquetteAjustee(ctx,'Effet relativiste : les protons arrivent de plus en plus tard sur la RF (au-delà de 90°, ils décélèrent)',gr.x,2,css('--texte'),fs,'left','top',Wd-gr.x-4);
-        if(f0!==0) trait(ctx,Gref.pts.map(([w,p])=>[X(w),Y(p)]),css('--ghost'),1.8,[6,4]);
-        trait(ctx,G.pts.map(([w,p])=>[X(w),Y(p)]),css('--dose'),3);
-      } else if(cach){ $('l2info2').innerHTML=''; etiquette(ctx,'Structure temporelle du faisceau : affichée après la réponse',Wd/2,H/2,css('--texte-2'),fs,'center');
-      } else {
-        $('l2info2').innerHTML=mach==='s2c2'?'Pulse ≈ <b>10 µs</b> toutes les <b>1 ms</b> (≈ 1 %)':'Faisceau <b>continu</b> : dose régulée par boucle de rétroaction';
-        const gr={x:fs*4.2,y:fs*1.6,w:Wd-fs*4.2-fs*1.5,h:H-fs*1.6-fs*3}, tm=3, X=t=>gr.x+t/tm*gr.w;
-        if(mach==='s2c2'){ const Y=f=>gr.y+gr.h-(f-55)/(95-55)*gr.h;
-          axes(ctx,gr,fs,[0,1,2,3].map(v=>[v,X(v),v]),[60,70,80,90].map(v=>[v,Y(v),v]),'Temps (ms)','f RF (MHz)');
-          etiquetteAjustee(ctx,'S2C2 : la RF balaye de 91 à 61,5 MHz à chaque milliseconde (condensateur rotatif)',gr.x,2,css('--texte'),fs,'left','top',Wd-gr.x-4);
-          const f=t=>{ const u=t%1; return 76.25+14.75*Math.cos(2*Math.PI*u); };
-          const pts=[]; for(let k=0;k<=600;k++){ const t=tm*k/600; pts.push([X(t),Y(f(t))]); } trait(ctx,pts,css('--phi'),2.5);
-          for(let c=0;c<3;c++){ const ti=c+Math.acos((87.5-76.25)/14.75)/(2*Math.PI), te=c+Math.acos((63.7-76.25)/14.75)/(2*Math.PI);
-            rond(ctx,X(ti),Y(87.5),4,css('--choix')); ctx.fillStyle=css('--dose'); ctx.fillRect(X(te)-2,gr.y+gr.h-fs*1.6,5,fs*1.6);
-            if(c===0){ etiquette(ctx,'injection 87,5',X(ti)+6,Y(87.5)-fs*0.6,css('--choix'),Math.round(fs*0.85),'left'); etiquette(ctx,'extraction 63,7 → pulse',X(te)+6,gr.y+gr.h-fs*1.2,css('--dose'),Math.round(fs*0.85),'left'); } }
-        } else { const Y=v=>gr.y+gr.h-v*gr.h*0.8;
-          axes(ctx,gr,fs,[0,1,2,3].map(v=>[v,X(v),v]),[[0,Y(0),'0'],[1,Y(1),'I']],'Temps (ms)','Courant');
-          etiquetteAjustee(ctx,'Cyclotron isochrone : paquets à la fréquence RF (106 MHz pour le C230), vus comme un courant continu',gr.x,2,css('--texte'),fs,'left','top',Wd-gr.x-4);
-          trait(ctx,[[X(0),Y(1)],[X(3),Y(1)]],css('--dose'),3); }
-      }
-    }
+    const J=this.jeu, m=J&&J.m, cach=cache(this);
+    const vus=new Set(this.manches.filter(x=>x.vu).map(x=>x.id)); if(J&&J.revele){ vus.add(m.id); m.vu=true; }
+    const RS=D_().results||{}; this.manches.forEach(x=>{ if(RS['L2_'+this.id+x.id]) vus.add(x.id); });
+    const ouv=m&&!J.revele?m.id:null;
+    $('l2note').textContent=ouv?'Question en cours : répondez sur votre téléphone.':vus.size<this.manches.length?'Le tableau se complète au fil des manches.':'Tableau de synthèse (diapo 70).';
+    /* tableau de synthèse */
+    $('l2syn').innerHTML='<thead><tr><th></th>'+MACHS.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>'+
+      SYN.map(([c,v,mid,bon])=>{ const vis=!mid||vus.has(mid), cur=mid&&m&&m.id===mid&&J.revele;
+        return `<tr${mid&&ouv===mid?' style="outline:2px solid var(--dose);outline-offset:-2px"':''}><td><b>${c}</b></td>`+v.map((t,k)=>`<td class="${cur&&bon.includes(k)?'ok':''}">${vis?t:'<span class="note">?</span>'}</td>`).join('')+'</tr>'; }).join('')+'</tbody>';
+    /* encombrement à l'échelle */
+    const P0=prep($('cvMach')); if(!P0) return; const {c:ctx,W,H}=P0, fs=taillePolice(H,0.07,11,16);
+    if(ouv==='1'){ etiquette(ctx,'Encombrement à l\'échelle : affiché après la réponse',W/2,H/2,css('--texte-2'),fs,'center'); return; }
+    const D=[4.3,2.5,22], sc=Math.min((W-fs*26)/D[2],(H-fs*3.5)/D[2]), y=fs*1.6+D[2]*sc/2;
+    let x=fs*1.5;
+    const noms=['Cyclotron isochrone','Synchrocyclotron','Synchrotron'], txt=['Ø 4,3 m · 220 t','Ø 2,5 m · 50 t','anneau Ø ~22 m'];
+    const col=[css('--choix'),css('--dose'),css('--phi')];
+    D.forEach((d,k)=>{ const r=d*sc/2; ctx.font=fs+'px '+POLICE; const larg=k<2?Math.max(d*sc,ctx.measureText(noms[k]).width,ctx.measureText(txt[k]).width*0.9):d*sc, cx=x+larg/2;
+      ctx.fillStyle=col[k]; ctx.strokeStyle=col[k];
+      if(k<2){ ctx.globalAlpha=0.25; ctx.beginPath(); ctx.arc(cx,y,r,0,2*Math.PI); ctx.fill(); ctx.globalAlpha=1; ctx.lineWidth=2; ctx.stroke();
+        etiquette(ctx,noms[k],cx,y+r+fs*1.1,css('--texte'),fs,'center'); etiquette(ctx,txt[k],cx,y+r+fs*2.25,css('--texte-2'),Math.round(fs*0.9),'center'); }
+      else { ctx.lineWidth=Math.max(3,0.6*sc); ctx.beginPath(); ctx.arc(cx,y,r,0,2*Math.PI); ctx.stroke();
+        etiquette(ctx,noms[k],cx,y-fs*0.6,css('--texte'),fs,'center'); etiquette(ctx,txt[k],cx,y+fs*0.7,css('--texte-2'),Math.round(fs*0.9),'center'); }
+      x+=larg+fs*2.5; });
+    const ech=5*sc; ctx.strokeStyle=css('--texte-2'); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(fs*1.5,H-fs*0.8); ctx.lineTo(fs*1.5+ech,H-fs*0.8); ctx.stroke(); etiquette(ctx,'5 m',fs*1.5+ech+6,H-fs*0.8,css('--texte-2'),Math.round(fs*0.9),'left');
   }
 };
 /* ---------- Module B : régulation de dose pulse par pulse (« blind golfer ») ---------- */
@@ -1381,57 +1355,48 @@ function jouerSpot(f,sig,maxp,rnd){ const p=[]; let t=0; while(p.length<maxp&&t<
 function monteCarlo(f,sig,maxp){ const rnd=hasard(4242); let ok=0,sur=0,sous=0,np=0; const n=4000;
   for(let k=0;k<n;k++){ const s=jouerSpot(f,sig,maxp,rnd); np+=s.p.length; if(s.t>GOLF.haut) sur++; else if(s.t<GOLF.bas) sous++; else ok++; }
   return {ok:100*ok/n,sur:100*sur/n,sous:100*sous/n,np:np/n}; }
-let spotDemo=null;
+let spotDemo=null, MCG=null;
 const modB={id:'b',titre:'Le golfeur aveugle',
   consigne:'Sur son téléphone, chaque étudiant délivre un spot de 3,8 pC pulse par pulse, sans dépasser la tolérance.',
-  html:`<div class="titre-graphe"><h3>Synchrocyclotron : délivrer la charge d'un spot pulse par pulse</h3><span class="note">Faisceau pulsé : pas de boucle de rétroaction, on mesure chaque pulse a posteriori.</span></div>
-    <div style="flex:1.3 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:var(--gap)">
+  html:`<div class="titre-graphe"><h3>Le golfeur aveugle : délivrer 3,8 pC pulse par pulse</h3><span class="note">Tolérance 3,7 à 3,9 pC (bande verte). Chaque pulse délivre la charge demandée à ±10 % près ; on ne la connaît qu'après coup.</span></div>
+    <div style="flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--gap)">
       <div class="graphe"><canvas id="cvGolf" aria-label="Charge cumulée du spot, pulse par pulse"></canvas></div>
-      <div class="graphe"><canvas id="cvGolfMC" aria-label="Réussite selon la fraction visée"></canvas></div></div>
+      <div class="graphe"><canvas id="cvGolfSalle" aria-label="Résultats de la salle"></canvas></div></div>
     <div class="chips" id="l2gchips"></div>
-    <div class="graphe g07"><canvas id="cvGolfSalle" aria-label="Résultats de la salle"></canvas></div>
-    <div class="cmd">
-      <div class="curseur"><label for="gSig"><span>Stabilité pulse à pulse (écart-type)</span> <output id="gSigo"></output></label><input type="range" id="gSig" min="3" max="18" step="1" value="10"></div>
-      <div class="curseur"><label for="gF"><span>Charge demandée = fraction du reste</span> <output id="gFo"></output></label><input type="range" id="gF" min="30" max="100" step="5" value="60"></div>
-      <div class="options"><button class="btn plein" id="gJouer" type="button">Délivrer un spot</button></div>
-    </div>`,
-  sources:'Diapos 64-65 : look-up table (charge moyenne par pulse selon V<sub>dee</sub>, stabilité de 3 à 18 %), mesure a posteriori de chaque pulse, algorithme « blind golfer » ; exemple d\'un spot de 3,8 pC, tolérance jusqu\'à 3,9 pC. Ici : tolérance 3,7-3,9 pC, fluctuation gaussienne, au plus 8 pulses, stratégie « demander une fraction fixe du reste ».'+SRC_PEDA,
+    <div class="mactions"><span class="note">Démonstration :</span><button class="btn plein" id="gTout" type="button">Tout d'un coup</button><button class="btn plein" id="gCourt" type="button">Viser court puis finir petit</button></div>`,
+  sources:'Diapos 64-65 : look-up table (charge moyenne par pulse selon V<sub>dee</sub>, stabilité de 3 à 18 %), mesure a posteriori de chaque pulse, algorithme « blind golfer » ; exemple d\'un spot de 3,8 pC, tolérance jusqu\'à 3,9 pC. Ici : tolérance 3,7-3,9 pC, fluctuation gaussienne de 10 %, au plus 8 pulses. « Viser court » = demander 60 % du reste à chaque pulse ; pourcentages de réussite simulés sur 4000 spots.'+SRC_PEDA,
   manches:[
     {id:'1',type:'golf',titre:'Mon spot de 3,8 pC',texte:'Délivrez un spot de <b>3,8 pC</b> (tolérance 3,7 à 3,9 pC). Chaque pulse délivre la charge demandée à ±10 % près. Au-delà de 3,9 pC, le spot est surdosé.',
-     bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC, en le moins de pulses possible',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:8}),regler:()=>{ $('gSig').value=10; modB.redessiner(); },
-     e:'Stratégie du golfeur aveugle : on vise court (une fraction du reste), puis on finit par de petits pulses, dont l\'erreur <b>absolue</b> est petite. Tout demander d\'un coup (±0,38 pC d\'erreur sur un seul pulse) dépasse la tolérance environ 4 fois sur 10 (graphe de droite, fraction 100 %).'},
+     bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC, en le moins de pulses possible',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:8}),regler:()=>{ spotDemo=null; modB.redessiner(); },
+     e:'Stratégie du golfeur aveugle : on vise court (une fraction du reste), puis on finit par de petits pulses, dont l\'erreur <b>absolue</b> est petite. Tout demander d\'un coup (±0,38 pC d\'erreur sur un seul pulse) dépasse la tolérance environ 4 fois sur 10 (voir les pourcentages sous les graphes).'},
     {id:'2',type:'golf',titre:'Même spot, 3 pulses maximum',texte:'Même spot de <b>3,8 pC</b>, mais en <b>3 pulses maximum</b> (le traitement doit aller vite).',
-     bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC en 3 pulses au plus',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:3}),regler:()=>{ $('gSig').value=10; modB.redessiner(); },
-     e:'Moins de pulses, c\'est un traitement plus rapide, mais un risque plus grand de sortir de la tolérance : compromis entre précision et durée. Avec une meilleure stabilité (V<sub>dee</sub> élevé, look-up table), on peut viser plus près du but à chaque pulse.'},
+     bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC en 3 pulses au plus',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:3}),regler:()=>{ spotDemo=null; modB.redessiner(); },
+     e:'Moins de pulses, c\'est un traitement plus rapide, mais un risque plus grand de sortir de la tolérance : compromis entre précision et durée. Avec une meilleure stabilité des pulses (look-up table, diapo 64), on peut viser plus près du but à chaque pulse.'},
   ],
-  init(){ ['gSig','gF'].forEach(n=>$(n).addEventListener('input',()=>{ spotDemo=null; this.redessiner(); })); $('gJouer').onclick=()=>{ spotDemo=jouerSpot(+$('gF').value/100,+$('gSig').value/100,8,Math.random); this.redessiner(); };
-    observer(['cvGolf','cvGolfMC','cvGolfSalle'],()=>this.redessiner()); },
+  init(){ let tm=0; const jouer=f=>{ clearInterval(tm); spotDemo=Object.assign(jouerSpot(f,0.10,8,Math.random),{vu:0,nom:f>=1?'Tout d\'un coup':'Viser court puis finir petit'});
+      tm=setInterval(()=>{ spotDemo.vu++; this.redessiner(); if(spotDemo.vu>=spotDemo.p.length) clearInterval(tm); },550); this.redessiner(); };
+    $('gTout').onclick=()=>jouer(1); $('gCourt').onclick=()=>jouer(0.6);
+    observer(['cvGolf','cvGolfSalle'],()=>this.redessiner()); },
   redessiner(){
-    const sig=+$('gSig').value/100, f=+$('gF').value/100; $('gSigo').textContent=fr(sig*100,0)+' %'; $('gFo').textContent=fr(f*100,0)+' %';
-    const mc=monteCarlo(f,sig,8);
-    chips('l2gchips',[['Spots dans la tolérance',fr(mc.ok,0)+' %'],['Pulses par spot (moy.)',fr(mc.np,1)],['Surdosés (> 3,9 pC)',fr(mc.sur,0)+' %'],['Sous-dosés après 8 pulses',fr(mc.sous,1)+' %']]);
+    if(!MCG) MCG={tout:monteCarlo(1,0.10,8),court:monteCarlo(0.6,0.10,8)};
+    chips('l2gchips',[['Tout d\'un coup : spots réussis',fr(MCG.tout.ok,0)+' %'],['Tout d\'un coup : surdosés',fr(MCG.tout.sur,0)+' %'],['Viser court : spots réussis',fr(MCG.court.ok,0)+' %'],['Viser court : pulses par spot',fr(MCG.court.np,1)]]);
     let P0=prep($('cvGolf'));
-    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,16); const g={x:fs*3.4,y:fs*1.6,w:W-fs*4,h:H-fs*3}, top=4.6, Y=q=>g.y+g.h-q/top*g.h;
-      axes(ctx,g,fs,[],[0,1,2,3,4].map(v=>[v,Y(v),v]),'','Charge (pC)');
-      ctx.fillStyle='#7FC8F8'; ctx.globalAlpha=.4; ctx.fillRect(g.x,Y(GOLF.haut),g.w,Y(GOLF.bas)-Y(GOLF.haut)); ctx.globalAlpha=1;
-      etiquette(ctx,'tolérance',g.x+g.w-4,Y(GOLF.haut)-fs*0.6,css('--texte-2'),Math.round(fs*0.85),'right');
-      etiquette(ctx,'Un spot, pulse par pulse',g.x,2,css('--texte'),fs,'left','top');
-      const s=spotDemo, bx=g.x+g.w*0.3, bw=g.w*0.3; ctx.strokeStyle=css('--texte-2'); ctx.strokeRect(bx,Y(top*0.98),bw,Y(0)-Y(top*0.98));
-      if(s){ let acc=0; s.p.forEach((p,i)=>{ const y1=Y(acc+p.m), y0=Y(acc); ctx.fillStyle=i%2?'#3E7D2A':'#6CC24A'; if(acc+p.m>GOLF.haut&&i===s.p.length-1) ctx.fillStyle='#E57373'; ctx.fillRect(bx,y1,bw,y0-y1);
-        etiquette(ctx,`${i+1} : ${fr(p.d,2)} → ${fr(p.m,2)}`,bx+bw+6,(y0+y1)/2,css('--texte-2'),Math.round(fs*0.8),'left'); acc+=p.m; });
-        etiquette(ctx,fr(s.t,2)+' pC '+(s.t>GOLF.haut?'✗ surdosé':s.t<GOLF.bas?'✗ sous-dosé':'✓'),bx+bw/2,Y(Math.min(top*0.97,s.t))-fs*0.7,s.t>=GOLF.bas&&s.t<=GOLF.haut?css('--juste'):css('--faux'),fs,'center'); }
-      }
-    P0=prep($('cvGolfMC'));
-    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,16); const g={x:fs*4.6,y:fs*1.6,w:W-fs*8.2,h:H-fs*4.6}, X=v=>g.x+(v-0.3)/0.7*g.w, Y=v=>g.y+g.h-v/100*g.h, Y2=v=>g.y+g.h-v/8*g.h;
-      axes(ctx,g,fs,[0.3,0.4,0.5,0.6,0.7,0.8,0.9,1].map(v=>[v,X(v),fr(100*v,0)+' %']),[0,25,50,75,100].map(v=>[v,Y(v),v+' %']),'Fraction du reste demandée à chaque pulse','Réussite');
-      ctx.fillStyle=css('--S'); ctx.textAlign='left'; ctx.textBaseline='middle'; [2,4,6,8].forEach(v=>ctx.fillText(v,g.x+g.w+6,Y2(v)));
-      etiquetteAjustee(ctx,'Stratégies (4000 spots simulés) : réussite (trait), pulses par spot (tirets)',g.x,2,css('--texte'),fs,'left','top',W-g.x-4);
-      const ok=[],np=[]; for(let v=0.3;v<=1.0001;v+=0.05){ const r=monteCarlo(v,sig,8); ok.push([X(v),Y(r.ok)]); np.push([X(v),Y2(r.np)]); }
-      trait(ctx,np,css('--S'),2,[6,4]); trait(ctx,ok,css('--dose'),3); rond(ctx,X(f),Y(mc.ok),6,css('--dose')); }
+    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,16); const g={x:fs*3.4,y:fs*3.2,w:W-fs*4,h:H-fs*4.6}, top=4.6, Y=q=>g.y+g.h-q/top*g.h;
+      axes(ctx,g,fs,[],[0,1,2,3,4].map(v=>[v,Y(v),v]),'','Charge du spot (pC)');
+      ctx.fillStyle=css('--juste'); ctx.globalAlpha=.22; ctx.fillRect(g.x,Y(GOLF.haut),g.w,Y(GOLF.bas)-Y(GOLF.haut)); ctx.globalAlpha=1;
+      const s=spotDemo; etiquetteAjustee(ctx,s?'Démonstration : '+s.nom:'Démonstration : choisissez une stratégie',g.x,2,css('--texte'),fs,'left','top',W-g.x-4);
+      const bx=g.x+g.w*0.06, bw=g.w*0.22; ctx.strokeStyle=css('--texte-2'); ctx.lineWidth=1.5; ctx.strokeRect(bx,Y(top*0.98),bw,Y(0)-Y(top*0.98));
+      if(s){ let acc=0; const P=s.p.slice(0,s.vu||0);
+        P.forEach((p,i)=>{ const y1=Y(Math.min(top*0.98,acc+p.m)), y0=Y(acc); const der=i===s.p.length-1; ctx.fillStyle=der&&acc+p.m>GOLF.haut?css('--faux'):i%2?css('--choix'):css('--dose'); ctx.globalAlpha=.85; ctx.fillRect(bx,y1,bw,y0-y1); ctx.globalAlpha=1;
+          etiquetteAjustee(ctx,`n° ${i+1} : ${fr(p.d,2)} → ${fr(p.m,2)}`,bx+bw+fs*0.6,(y0+y1)/2,css('--texte'),Math.round(fs*0.85),'left','middle',W-bx-bw-fs); acc+=p.m; });
+        if(s.vu>=s.p.length){ const okS=s.t>=GOLF.bas&&s.t<=GOLF.haut; const près=Math.abs(s.t-GOLF.haut)<0.005||Math.abs(s.t-GOLF.bas)<0.005;
+          etiquetteAjustee(ctx,fr(s.t,près?3:2)+' pC en '+s.p.length+' pulse'+(s.p.length>1?'s':'')+' : '+(okS?'✓ dans la tolérance':s.t>GOLF.haut?'✗ surdosé':'✗ sous-dosé'),bx,fs*1.9,okS?css('--juste'):css('--faux'),fs,'left','middle',W-bx-4); }
+        if(P.length) etiquette(ctx,'pulse : demandé → reçu (pC)',bx+bw+fs*0.6,Y(top*0.98),css('--texte-2'),Math.round(fs*0.8),'left','top'); }
+    }
     P0=prep($('cvGolfSalle'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.12,11,15); const g={x:fs*2,y:fs*1.4,w:W-fs*4,h:H-fs*2.6}, a=3.0,b=4.6, X=q=>g.x+(Math.max(a,Math.min(b,q))-a)/(b-a)*g.w, y0=g.y+fs*0.6;
       const J=this.jeu, R=reponses(this);
-      etiquette(ctx,J&&J.m?(J.revele?'Résultats de la salle : charge finale de chaque spot (nombre de pulses)':'Résultats de la salle après la correction'):'Ouvrez une manche pour faire jouer la salle',g.x,2,css('--texte'),fs,'left','top');
+      etiquetteAjustee(ctx,J&&J.m?(J.revele?'La salle : charge finale (nombre de pulses)':'Résultats de la salle après la correction'):'Ouvrez une manche pour faire jouer la salle',g.x,2,css('--texte'),fs,'left','top',W-g.x-4);
       ctx.fillStyle='#7FC8F8'; ctx.globalAlpha=.35; ctx.fillRect(X(GOLF.bas),g.y,X(GOLF.haut)-X(GOLF.bas),g.h); ctx.globalAlpha=1;
       ctx.strokeStyle=css('--trait'); ctx.beginPath(); ctx.moveTo(g.x,y0); ctx.lineTo(g.x+g.w,y0); ctx.stroke();
       [3,3.2,3.4,3.6,3.8,4,4.2,4.4,4.6].forEach(v=>etiquette(ctx,fr(v,1),X(v),g.y+g.h,css('--texte-2'),Math.round(fs*0.85),'center','bottom'));
@@ -1445,10 +1410,10 @@ NIVEAUX.push({id:'L2',num:'2',court:'Production',titre:'Production des faisceaux
    e:'ω = QB/m : le mouvement est isochrone. Au-delà de ≈ 20 MeV, γ augmente et ω = QB/(γm₀) diminue : il faut un champ qui croît avec le rayon (cyclotron isochrone) ou une RF modulée (synchrocyclotron).'},
   {q:'Comment le cyclotron isochrone (C230, C400) corrige-t-il l\'effet relativiste sans perdre la focalisation verticale ?',c:['Champ qui croît avec le rayon et secteurs collines-vallées','Champ qui décroît avec le rayon','Fréquence RF modulée à 1 kHz','Dégradeur en sortie de cyclotron'],r:0,d:'48-52',
    e:'B doit croître avec le rayon (isochronisme), ce qui défocalise ; l\'alternance de secteurs étroits (collines) et larges (vallées) crée une composante azimutale qui refocalise.'},
-  {q:'Quelle est la structure temporelle du faisceau du S2C2 (Proteus One) ?',c:['Continue, paquets à 106 MHz','Pulsée : ≈ 10 µs toutes les millisecondes','Pulsée : extractions (spills) de quelques secondes','Continue, régulée par boucle de rétroaction'],r:1,d:'62',
-   e:'La RF est modulée à 1 kHz : un paquet est capturé et accompagné jusqu\'à l\'extraction. Pulse ≈ 10 µs (≈ 1 % du temps). D\'où la régulation pulse par pulse (look-up table, « blind golfer »).'},
-  {q:'Quel accélérateur fournit directement une énergie variable, sans dégradeur ?',c:['Le cyclotron isochrone','Le synchrocyclotron','Le synchrotron','Aucun'],r:2,d:'67-70',
-   e:'Le synchrotron (rayon fixe, champ qui croît avec l\'énergie) extrait l\'énergie voulue cycle à cycle. Les cyclotrons et synchrocyclotrons sortent une énergie fixe, d\'où le dégradeur et le sélecteur d\'énergie (level 3).'},
+  {q:'Bobines supraconductrices (Nb-Ti à 4,2 K) dans un cyclotron : quel est le principal avantage ?',c:['Champ plus élevé (≈ 3,5 T contre 1,9 T) : cyclotron plus petit et plus léger','Faisceau continu au lieu de pulsé','Énergie variable sans dégradeur','Remise en route plus rapide après un arrêt'],r:0,d:'55-56',
+   e:'À énergie égale, un champ plus fort permet un rayon plus petit : C230 en cuivre 220 t et Ø 4,3 m, ProBeam supraconducteur 90 t et Ø 3,1 m. Moins de puissance électrique aussi, mais risque de quench et remise en route plus longue.'},
+  {q:'Pourquoi ne peut-on pas augmenter sans limite le champ d\'un cyclotron isochrone pour le miniaturiser ?',c:['La modulation collines-vallées s\'atténue : la focalisation verticale se perd','Le faisceau devient pulsé','La fréquence RF devient trop basse','Le dégradeur ne fonctionne plus'],r:0,d:'57',
+   e:'À champ très élevé, l\'effet de la modulation collines-vallées est très atténué. Pour miniaturiser davantage, on passe au synchrocyclotron (Mevion : Nb₃Sn à 9 T, Ø 1,8 m, 15 t, dans la gantry).'},
 ]});
 })();
 
@@ -1482,18 +1447,18 @@ const modA={id:'a',titre:'Aiguillage magnétique',
       <div class="curseur"><label for="l3E"><span>Énergie</span> <output id="l3Eo"></output></label><input type="range" id="l3E" min="50" max="430" step="1" value="230"></div>
       <div class="curseur"><label for="l3B"><span>Champ du dipôle</span> <output id="l3Bo"></output></label><input type="range" id="l3B" min="0.3" max="6" step="0.01" value="1.8"></div>
     </div>`,
-  sources:'Diapo 75 : Bρ [T·m] = p [MeV/c] / (299,8·z), ρ = Bρ/B, pc = √(T² + 2T·mc²) ; p 230 MeV : 2,3 T·m, ρ = 1,3 m à 1,8 T ; ¹²C 430 MeV/u : 6,6 T·m, ρ = 3,7 m. Dipôle secteur de 60° (comme le B3G du Proteus One), rayon nominal 1,29 m, tube à 1,2 m de la sortie ; le tube accepte un écart de ±2,5 % sur B.'+SRC_PEDA,
+  sources:'⁴He²⁺ et ¹²C⁶⁺ ont le même rapport A/Z = 2 : à même énergie par nucléon, même rigidité, donc même trajectoire. Diapo 75 : Bρ [T·m] = p [MeV/c] / (299,8·z), ρ = Bρ/B, pc = √(T² + 2T·mc²) ; p 230 MeV : 2,3 T·m, ρ = 1,3 m à 1,8 T ; ¹²C 430 MeV/u : 6,6 T·m, ρ = 3,7 m. Dipôle secteur de 60° (comme le B3G du Proteus One), rayon nominal 1,29 m, tube à 1,2 m de la sortie ; le tube accepte un écart de ±2,5 % sur B.'+SRC_PEDA,
   manches:[
-    {id:'1',type:'estim',titre:'Protons de 230 MeV',masque:true,texte:'Protons de <b>230 MeV</b>, dipôle de rayon <b>1,29 m</b>. Quel champ B pour qu\'ils entrent dans le tube ?',min:0.3,max:6,pas:0.01,dec:2,def:1,unite:'T',
-     r:brho('p',230)/RHO0,juste:v=>Math.abs(v/(brho('p',230)/RHO0)-1)<=TOLR,ecart:v=>Math.abs(v-brho('p',230)/RHO0),bande:[brho('p',230)/RHO0*(1-TOLR),brho('p',230)/RHO0*(1+TOLR)],aff:'1,80 T',
+    {id:'1',type:'choix',titre:'Protons de 230 MeV',masque:true,texte:'Protons de <b>230 MeV</b> : rigidité <b>Bρ = 2,32 T·m</b>. Dipôle de rayon <b>1,29 m</b> : quel champ pour qu\'ils entrent dans le tube ?',
+     choix:['≈ 0,9 T','≈ 1,8 T','≈ 3,0 T','≈ 5,1 T'],champs:[0.9,1.8,3.0,5.1],r:1,
      regler:()=>reglerA('p',230,1),apres:()=>reglerA('p',230,brho('p',230)/RHO0),
-     e:'pc = √(230² + 2×230×938,3) ≈ 696 MeV/c, Bρ = 696/299,8 ≈ 2,32 T·m, B = 2,32/1,29 ≈ 1,80 T (aimant classique, conducteur en cuivre).'},
-    {id:'2',type:'estim',titre:'Protons dégradés à 100 MeV',masque:true,texte:'Après le dégradeur, les protons n\'ont plus que <b>100 MeV</b>. Quel champ dans le même dipôle (1,29 m) ?',min:0.3,max:6,pas:0.01,dec:2,def:1.8,unite:'T',
-     r:brho('p',100)/RHO0,juste:v=>Math.abs(v/(brho('p',100)/RHO0)-1)<=TOLR,ecart:v=>Math.abs(v-brho('p',100)/RHO0),bande:[brho('p',100)/RHO0*(1-TOLR),brho('p',100)/RHO0*(1+TOLR)],aff:'1,15 T',
+     e:'B = Bρ / ρ = 2,32 / 1,29 ≈ 1,80 T (aimant classique, conducteur en cuivre). Bρ = pc / (299,8 × z), avec pc = √(T² + 2T·mc²) ≈ 696 MeV/c.'},
+    {id:'2',type:'choix',titre:'Protons dégradés à 100 MeV',masque:true,texte:'Après le dégradeur, les protons n\'ont plus que <b>100 MeV</b>. Dans le même dipôle, le champ doit…',
+     choix:['rester à 1,8 T','baisser à ≈ 1,15 T (proportionnel à l\'impulsion)','baisser à ≈ 0,8 T (proportionnel à l\'énergie)','augmenter'],champs:[1.8,1.15,0.78,2.2],r:1,
      regler:()=>reglerA('p',100,1.8),apres:()=>reglerA('p',100,brho('p',100)/RHO0),
-     e:'pc ≈ 445 MeV/c, Bρ ≈ 1,48 T·m, B ≈ 1,15 T. Tous les éléments de la ligne (dégradeur, dipôles, quadripôles, fentes) changent de réglage à chaque couche en énergie (diapo 131) : d\'où un temps mort entre deux couches en PBS.'},
-    {id:'3',type:'estim',titre:'Ions carbone de 430 MeV/u',masque:true,texte:'Ions <b>¹²C⁶⁺ de 430 MeV/u</b> (≈ 30 cm dans l\'eau) dans ce même dipôle de 1,29 m : quel champ ?',min:0.3,max:6,pas:0.01,dec:2,def:1.8,unite:'T',
-     r:brho('C',430)/RHO0,juste:v=>Math.abs(v/(brho('C',430)/RHO0)-1)<=TOLR,ecart:v=>Math.abs(v-brho('C',430)/RHO0),bande:[brho('C',430)/RHO0*(1-TOLR),brho('C',430)/RHO0*(1+TOLR)],aff:'≈ 5,1 T',
+     e:'B suit l\'<b>impulsion</b>, pas l\'énergie : pc passe de 696 à 445 MeV/c (× 0,64), donc B ≈ 1,15 T. Tous les éléments de la ligne (dégradeur, dipôles, quadripôles, fentes) changent de réglage à chaque couche en énergie (diapo 131) : d\'où un temps mort entre deux couches en PBS.'},
+    {id:'3',type:'choix',titre:'Ions carbone de 430 MeV/u',masque:true,texte:'Ions <b>¹²C⁶⁺ de 430 MeV/u</b> (≈ 30 cm dans l\'eau, comme les protons de 230 MeV). Dans le même dipôle, quel champ ?',
+     choix:['≈ 1,8 T : le même','≈ 2,7 T : 1,5 fois plus','≈ 5,1 T : près de 3 fois plus','≈ 21 T : 12 fois plus'],champs:[1.8,2.7,brho('C',430)/RHO0,21],r:2,
      regler:()=>reglerA('C',430,1.8),apres:()=>reglerA('C',430,brho('C',430)/RHO0),
      e:'Bρ ≈ 6,6 T·m, près de 3 fois celui des protons à parcours égal : B ≈ 5,1 T, hors de portée d\'un aimant classique (≈ 1,8 T). Soit des aimants supraconducteurs, soit un rayon de 3,7 m à 1,8 T : la gantry carbone de Heidelberg pèse ≈ 600 t.'},
   ],
@@ -1502,7 +1467,7 @@ const modA={id:'a',titre:'Aiguillage magnétique',
     const W=+$('l3E').value, B=+$('l3B').value, br=brho(ionA,W), I=IONS[ionA], cach=cache(this), J=this.jeu;
     const M={p:MP,He:MHE,C:MC}[ionA];
     $('l3Eo').textContent=W+' '+(ionA==='p'?'MeV':'MeV/u'); $('l3Bo').textContent=fr(B,2)+' T';
-    chips('l3chips',[['Particule',I.nom+' (z = '+I.Z+')'],['Impulsion pc',fr(pcDe(I.A,M,W),0)+' MeV',cach],['Rigidité Bρ',fr(br,2)+' T·m',cach],['Rayon avec ce champ',fr(br/B,2)+' m',cach],['Champ nominal (ρ = 1,29 m)',fr(br/RHO0,2)+' T',cach]]);
+    chips('l3chips',[['Particule',I.nom+({He:'²⁺',C:'⁶⁺'}[ionA]||'')+' · A/Z = '+fr(I.A/I.Z,0)],['Impulsion pc',fr(pcDe(I.A,M,W),0)+' MeV',cach],['Rigidité Bρ',fr(br,2)+' T·m',cach],['Rayon avec ce champ',fr(br/B,2)+' m',cach],['Champ nominal (ρ = 1,29 m)',fr(br/RHO0,2)+' T',cach]]);
     const P0=prep($('cvDip')); if(!P0) return; const {c:ctx,W:Wd,H}=P0, fs=taillePolice(H,0.035,12,18);
     const xm=-0.55, xM=1.95, ym=-0.25, yM=1.75, sc=Math.min((Wd-20)/(xM-xm),(H-20)/(yM-ym)), ox=(Wd-(xM-xm)*sc)/2, oy=H-(H-(yM-ym)*sc)/2;
     const X=x=>ox+(x-xm)*sc, Y=y=>oy-(y-ym)*sc;
@@ -1524,11 +1489,11 @@ const modA={id:'a',titre:'Aiguillage magnétique',
     const tracer=(rho,col,lw)=>{ const T=trajectoire(rho); trait(ctx,T.pts.map(([x,y])=>[X(x),Y(y)]),col,lw); return T; };
     const R=reponses(this);
     if(R.length&&J&&J.m){ ctx.font=Math.round(fs*0.85)+'px '+POLICE; const lab=[];
-      R.forEach(r=>{ const T=tracer(br/r.v,r.ok?css('--juste'):css('--faux'),1.3); const p=T.pts[T.pts.length-1]; lab.push({x:X(p[0]),y:Y(p[1]),r}); });
+      R.forEach(r=>{ const Bv=J.m.champs?J.m.champs[r.v]:r.v; if(!(Bv>0)) return; const T=tracer(br/Bv,r.ok?css('--juste'):css('--faux'),1.3); const p=T.pts[T.pts.length-1]; lab.push({x:X(p[0]),y:Y(p[1]),r}); });
       lab.sort((a,b)=>a.y-b.y); let last=fs*0.6-fs*0.95; lab.forEach(l=>{ const y=Math.max(l.y,last+fs*0.95); last=y; etiquette(ctx,(l.r.best?'★ ':'')+l.r.nom,l.x+5,y,l.r.best?css('--dose'):l.r.ok?css('--juste'):css('--faux'),Math.round(fs*0.85),'left'); }); }
     const T=tracer(br/B,css('--dose'),3.5);
     const ok=!T.perdu&&Math.abs(T.off)<=OUV;
-    $('l3info').innerHTML=T.perdu?'Le faisceau tourne trop : <b>perdu dans l\'aimant</b>':ok?'Le faisceau <b>entre dans le tube</b> ✓':`Écart à l'entrée du tube : <b>${fr(T.off*100,1)} cm</b> (tube : ±${fr(OUV*100,1)} cm)`;
+    $('l3info').innerHTML=(T.perdu?'Le faisceau tourne trop : <b>perdu dans l\'aimant</b>':ok?'Le faisceau <b>entre dans le tube</b> ✓':`Écart à l'entrée du tube : <b>${fr(T.off*100,1)} cm</b> (tube : ±${fr(OUV*100,1)} cm)`);
   }
 };
 function reglerA(k,W,B){ ionA=k; segVal('l3ion',k); $('l3E').value=W; $('l3B').value=B; modA.redessiner(); }
@@ -1634,7 +1599,7 @@ const mod={id:'a',titre:'Vise la tumeur',
      e:'À énergie par nucléon égale, R(¹²C) = (A/z²)·R(p) = R(p)/3. Il faut donc l\'énergie d\'un proton de parcours 3 × 15,6 = 46,8 cm, soit ≈ 279 MeV/u (pour l\'hélium, A/z² = 1 : même énergie que les protons). Pic plus fin, mais queue de fragmentation.'},
   ],
   maj(){ const E=+$('l4E').value, sE=+$('l4s').value/100; Emem[ion]=E; $('l4Eo').textContent=E+' '+IONS[ion].unite; $('l4so').textContent=fr(+$('l4s').value,1)+' %'; cur=calcul(ion,E,sE); this.redessiner(); },
-  init(){ seg('l4ion',v=>{ ion=v; const I=IONS[v], e=$('l4E'); e.min=I.min; e.max=I.max; e.value=Emem[v]; $('l4s').value=v==='p'?0.5:0.1; this.maj(); });
+  init(){ seg('l4ion',v=>{ ion=v; const I=IONS[v], e=$('l4E'), E0=+e.value; e.min=I.min; e.max=I.max; e.value=Math.max(I.min,Math.min(I.max,E0)); /* même énergie par nucléon (bornée à la plage de l'ion) */ $('l4s').value=v==='p'?0.5:0.1; this.maj(); });
     ['l4E','l4s'].forEach(n=>$(n).addEventListener('input',()=>this.maj())); ['l4S','l4F'].forEach(n=>$(n).addEventListener('change',()=>this.redessiner()));
     $('l4os').addEventListener('change',()=>{ avecOs=$('l4os').checked; this.redessiner(); });
     $('l4fig').onclick=()=>{ if(figees.length>=4) figees.shift(); figees.push(cur); this.redessiner(); }; $('l4eff').onclick=()=>{ figees=[]; this.redessiner(); };
@@ -1646,7 +1611,7 @@ const mod={id:'a',titre:'Vise la tumeur',
     $('l4info').innerHTML=cach?'Rappel (protons, eau) : R = 0,0022·E<sup>1,77</sup><br>70 MeV → 4,1 cm · 100 → 7,6 · 150 → 15,6<br>200 MeV → 26 cm · 230 → 33 cm'+(J.m.id==='3'?'<br>Ions : R<sub>ion</sub> = (A/z²)·R<sub>p</sub> à MeV/u égal':''):'';
     const P0=prep($('cvBragg')); if(!P0) return; const {c:ctx,W,H}=P0, fs=taillePolice(H,0.03,12,20);
     const showS=$('l4S').checked&&!cach, showF=$('l4F').checked&&!cach, R=reponses(this), haut=R.length?fs*1.15*Math.min(7,1+Math.ceil(R.length/6)):0;
-    const zmax=c.ion==='p'&&c.E>200||c.ion!=='p'&&c.R0>24?36:24;
+    const zmax=36; /* axe fixe (0-36 cm) : protons 230 MeV ≈ 33 cm */
     const g={x:fs*3.8,y:fs+haut,w:W-fs*3.8-(showS?fs*4.2:fs*1.4),h:H-fs-haut-fs*3.4};
     const X=z=>g.x+z/zmax*g.w, Y=v=>g.y+g.h-v/110*g.h, SMAX=[100,200,500,1000,2000,5000].find(v=>v>=c.Sin*8)||5000, YS=v=>g.y+g.h-Math.min(v,SMAX)/SMAX*g.h;
     if(cible){ ctx.fillStyle='#EF476F'; ctx.globalAlpha=.16; ctx.fillRect(X(cible[0]),g.y,X(cible[1])-X(cible[0]),g.h); ctx.globalAlpha=1; etiquette(ctx,'tumeur',(X(cible[0])+X(cible[1]))/2,g.y+4,'#C0392B',fs,'center','top');
@@ -1712,37 +1677,26 @@ let confA=CONF['1'], etatA='libre';
 function reglerA(C,etat){ confA=C; etatA=etat; $('l5zp').value=C.zp; $('l5zd').value=C.zd; $('l5dz').value=C.dz; modeP=etat==='equipe'?'equipe':'opt'; segVal('l5poids',modeP==='equipe'?'equipe':'opt'); modA.maj(); }
 const modA={id:'a',titre:'SOBP à plusieurs mains',
   consigne:'Manches 1 et 2 : jeu collectif. Chaque étudiant pilote une couche du SOBP ; la salle doit obtenir un plateau plat.',
-  html:`<div class="titre-graphe"><h3>Du pic de Bragg au volume traité</h3><span class="note">En haut : SOBP (dose physique, protons). En bas : balayage latéral d'une couche.</span></div>
+  html:`<div class="titre-graphe"><h3>Du pic de Bragg au SOBP</h3><span class="note">SOBP en dose physique, protons.</span></div>
     <div class="graphe g13"><canvas id="cvSobp" aria-label="Construction d'un SOBP"></canvas><div class="info" id="l5info" style="right:auto;left:14%"></div></div>
     <div class="cmd">
       <div class="curseur"><label for="l5zp"><span>Bord proximal</span> <output id="l5zpo"></output></label><input type="range" id="l5zp" min="2" max="20" step="0.5" value="10"></div>
       <div class="curseur"><label for="l5zd"><span>Bord distal</span> <output id="l5zdo"></output></label><input type="range" id="l5zd" min="3" max="25" step="0.5" value="15"></div>
       <div class="curseur"><label for="l5dz"><span>Espacement des couches</span> <output id="l5dzo"></output></label><input type="range" id="l5dz" min="2" max="12" step="1" value="5"></div>
       <div class="seg" id="l5poids"><button type="button" data-v="opt" class="actif">Poids optimisés</button><button type="button" data-v="eq">Poids égaux</button><button type="button" data-v="equipe">Poids de la salle</button></div>
-    </div>
-    <div class="graphe g2"><canvas id="cvLat" aria-label="Superposition de spots"></canvas><div class="info" id="l5info2"></div></div>
-    <div class="cmd">
-      <div class="curseur"><label for="l5sig"><span>σ du spot (au niveau de la couche)</span> <output id="l5sigo"></output></label><input type="range" id="l5sig" min="2" max="8" step="0.5" value="4"></div>
-      <div class="curseur"><label for="l5esp"><span>Espacement des spots</span> <output id="l5espo"></output></label><input type="range" id="l5esp" min="2" max="16" step="0.2" value="6"></div>
-      <div class="options"><label><input type="checkbox" id="l5spots" checked> Spots individuels</label></div>
     </div>`,
-  sources:'Pics natifs : modèle du level 4 (σ<sub>E</sub>/E = 0,5 %). Poids optimisés par moindres carrés positifs (cible : dose uniforme entre les bords) ; homogénéité calculée en excluant 2 mm à chaque bord. Jeu collectif : poids moyen des étudiants de chaque couche ; 1 pt si le poids est à ±25 % (au moins ±5) de l\'optimum, +1 pour toute l\'équipe si le plateau est à ±5 %. Balayage : spots gaussiens de même poids, FWHM = 2,355 σ, règle « espacement < 80 % de la FWHM » (diapo 130).'+SRC_PEDA,
-  manches:[ manchesCouches('1','Plateau à plusieurs mains (8 couches)'), manchesCouches('2','Plateau plus large (13 couches)'),
-    {id:'3',type:'estim',titre:'Espacement des spots',masque:true,texte:'Spot de <b>σ = 5 mm</b>. Quel espacement <b>maximal</b> pour respecter la règle « espacement &lt; 80 % de la FWHM » ?',min:2,max:16,pas:0.2,dec:1,def:5,unite:'mm',
-     r:0.8*2.355*5,tol:0.5,aff:'≈ 9,4 mm',regler:()=>{ $('l5sig').value=5; $('l5esp').value=5; etatA='libre'; modA.maj(); },apres:()=>{ $('l5esp').value=9.4; modA.maj(); },
-     e:'FWHM = 2,355 σ ≈ 11,8 mm, et 80 % de 11,8 ≈ 9,4 mm : l\'ondulation reste sous ±1 %. À 15 mm (3 σ), elle atteint ±20 %. Plus serré, c\'est plus homogène, mais plus long à délivrer.'} ],
+  sources:'Pics natifs : modèle du level 4 (σ<sub>E</sub>/E = 0,5 %). Poids optimisés par moindres carrés positifs (cible : dose uniforme entre les bords) ; homogénéité calculée en excluant 2 mm à chaque bord. Jeu collectif : poids moyen des étudiants de chaque couche ; 1 pt si le poids est à ±25 % (au moins ±5) de l\'optimum, +1 pour toute l\'équipe si le plateau est à ±5 %.'+SRC_PEDA,
+  manches:[ manchesCouches('1','Plateau à plusieurs mains (8 couches)'), manchesCouches('2','Plateau plus large (13 couches)') ],
   maj(){ this.calc(); this.redessiner(); },
   calc(){ let zp=+$('l5zp').value, zd=+$('l5zd').value; if(zd<zp+1){ zd=zp+1; $('l5zd').value=zd; }
     $('l5zpo').textContent=fr(zp,1)+' cm'; $('l5zdo').textContent=fr(zd,1)+' cm'; $('l5dzo').textContent=$('l5dz').value+' mm';
-    $('l5sigo').textContent=fr(+$('l5sig').value,1)+' mm'; $('l5espo').textContent=fr(+$('l5esp').value,1)+' mm';
     const dz=+$('l5dz').value, o=sobpPoids(zp,zd,dz,'p'); let w=o.w, eqInfo=null;
     if(modeP==='eq'){ const m=w.reduce((a,b)=>a+b)/w.length; w=w.map(()=>m); }
     if(modeP==='equipe'){ const J=this.jeu; const vs=J&&J.m&&J.m.type==='couches'?J.votes:{}; eqInfo=poidsEquipe(vs,o.n); if(eqInfo.w.length===o.n) w=eqInfo.w.map(v=>v*o.w[0]/100); }
     const r=sobpAvec(zp,zd,o.L,o.pics,w); S5=Object.assign({zp,zd,dz,L:o.L,pics:o.pics,n:o.n,wabs:w,wopt:o.w.map(v=>100*v/o.w[0]),wrel:w.map(v=>100*v/w[0]),Emin:o.pics[o.n-1].E,Emax:o.pics[0].E,eqInfo},r);
-    if(modeP==='equipe'){ const ro=sobpAvec(zp,zd,o.L,o.pics,o.w); S5.totOpt=ro.tot; }
-    Lt=lateral(+$('l5sig').value,+$('l5esp').value); },
-  init(){ ['l5zp','l5zd','l5dz','l5sig','l5esp'].forEach(n=>$(n).addEventListener('input',()=>{ etatA='libre'; this.maj(); })); $('l5spots').addEventListener('change',()=>this.redessiner());
-    seg('l5poids',v=>{ modeP=v; etatA='libre'; this.maj(); }); observer(['cvSobp','cvLat'],()=>this.redessiner()); this.maj(); },
+    if(modeP==='equipe'){ const ro=sobpAvec(zp,zd,o.L,o.pics,o.w); S5.totOpt=ro.tot; } },
+  init(){ ['l5zp','l5zd','l5dz'].forEach(n=>$(n).addEventListener('input',()=>{ etatA='libre'; this.maj(); }));
+    seg('l5poids',v=>{ modeP=v; etatA='libre'; this.maj(); }); observer(['cvSobp'],()=>this.redessiner()); this.maj(); },
   redessiner(){
     if(!S5) return; const S=S5, J=this.jeu, enJeu=J&&J.m&&J.m.type==='couches', masqueC=enJeu&&!J.revele;
     if(enJeu&&J.revele&&!J.res.local&&modeP!=='equipe'){ modeP='equipe'; segVal('l5poids','equipe'); }
@@ -1751,7 +1705,6 @@ const modA={id:'a',titre:'SOBP à plusieurs mains',
   dessin(){
     const S=S5, J=this.jeu, enJeu=J&&J.m&&J.m.type==='couches', masqueC=enJeu&&!J.revele;
     $('l5info').innerHTML=masqueC?`${S.n} couches de ${fr(S.Emin,0)} à ${fr(S.Emax,0)} MeV<br>Poids : à vous de jouer !`:`${S.n} couches, ${fr(S.Emin,0)} à ${fr(S.Emax,0)} MeV<br>Homogénéité ± <b>${fr(S.hom,1)} %</b><br>Dose à l'entrée <b>${fr(S.ent,0)} %</b>`+(modeP==='equipe'?'<br>Courbe pleine : poids de la salle ; tirets : optimum':'');
-    $('l5info2').innerHTML=cache(this)?'':`Espacement / FWHM <b>${fr(100*Lt.ratio,0)} %</b><br>Ondulation ± <b>${fr(Lt.ond,1)} %</b>`;
     let P0=prep($('cvSobp'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,18);
       const zmax=Math.min(ZMAX,Math.max(10,Math.ceil((S.zd+3)/2)*2)); let vm=0; if(!masqueC) for(let i=0;i*DZ<=zmax;i++) vm=Math.max(vm,S.tot[i]); const ymax=Math.max(130,Math.ceil(vm*1.05/25)*25);
@@ -1782,6 +1735,25 @@ const modA={id:'a',titre:'SOBP à plusieurs mains',
           ctx.fillStyle=css('--texte'); ctx.beginPath(); ctx.moveTo(x,Yw(wo)-5); ctx.lineTo(x+5,Yw(wo)); ctx.lineTo(x,Yw(wo)+5); ctx.lineTo(x-5,Yw(wo)); ctx.fill();
           if(S.eqInfo&&k>0) etiquette(ctx,String(S.eqInfo.c[k]),x,Yw(0)+fs*0.7,css('--texte-2'),Math.round(fs*0.8),'center'); }); }
     }
+  }
+};
+/* ---------- Module : espacement des spots (balayage latéral d'une couche) ---------- */
+const modS={id:'c',titre:'Espacement des spots',
+  html:`<div class="titre-graphe"><h3>Balayage latéral d'une couche</h3><span class="note">Spots gaussiens de même poids ; la courbe orange est la somme.</span></div>
+    <div class="graphe"><canvas id="cvLat" aria-label="Superposition de spots"></canvas><div class="info" id="l5info2"></div></div>
+    <div class="cmd">
+      <div class="curseur"><label for="l5sig"><span>σ du spot (au niveau de la couche)</span> <output id="l5sigo"></output></label><input type="range" id="l5sig" min="2" max="8" step="0.5" value="4"></div>
+      <div class="curseur"><label for="l5esp"><span>Espacement des spots</span> <output id="l5espo"></output></label><input type="range" id="l5esp" min="2" max="16" step="0.2" value="6"></div>
+      <div class="options"><label><input type="checkbox" id="l5spots" checked> Spots individuels</label></div>
+    </div>`,
+  sources:'Spots gaussiens de même poids, FWHM = 2,355 σ, règle « espacement < 80 % de la FWHM » (diapo 130).'+SRC_PEDA,
+  manches:[     {id:'1',type:'estim',titre:'Espacement des spots',masque:true,texte:'Spot de <b>σ = 5 mm</b>. Quel espacement <b>maximal</b> pour respecter la règle « espacement &lt; 80 % de la FWHM » ?',min:2,max:16,pas:0.2,dec:1,def:5,unite:'mm',
+     r:0.8*2.355*5,tol:0.5,aff:'≈ 9,4 mm',regler:()=>{ $('l5sig').value=5; $('l5esp').value=5; modS.maj(); },apres:()=>{ $('l5esp').value=9.4; modS.maj(); },
+     e:'FWHM = 2,355 σ ≈ 11,8 mm, et 80 % de 11,8 ≈ 9,4 mm : l\'ondulation reste sous ±1 %. À 15 mm (3 σ), elle atteint ±20 %. Plus serré, c\'est plus homogène, mais plus long à délivrer.'} ],
+  maj(){ $('l5sigo').textContent=fr(+$('l5sig').value,1)+' mm'; $('l5espo').textContent=fr(+$('l5esp').value,1)+' mm'; Lt=lateral(+$('l5sig').value,+$('l5esp').value); this.redessiner(); },
+  init(){ ['l5sig','l5esp'].forEach(n=>$(n).addEventListener('input',()=>this.maj())); $('l5spots').addEventListener('change',()=>this.redessiner()); observer(['cvLat'],()=>this.redessiner()); this.maj(); },
+  redessiner(){ if(!Lt) return; let P0;
+    $('l5info2').innerHTML=cache(this)?'':`Espacement / FWHM <b>${fr(100*Lt.ratio,0)} %</b><br>Ondulation ± <b>${fr(Lt.ond,1)} %</b>`;
     P0=prep($('cvLat'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.065,11,17), cach=cache(this);
       const ymax=130, g={x:fs*3.4,y:fs*0.6,w:W-fs*3.4-fs,h:H-fs*0.6-fs*3}, X=x=>g.x+(x+45)/90*g.w, Y=v=>g.y+g.h-Math.min(v,ymax)/ymax*g.h;
@@ -1891,7 +1863,7 @@ const modB={id:'b',titre:'Double diffusion ou balayage ?',
     const t=b=>`Couverture ≥ 95 % : <b>${fr(b.couv,0)} %</b><br>Tissu sain ≥ 90 % : <b>${surdoseVisible?fr(b.sain,1):'?'} cm²</b>`;
     $('l5iDS').innerHTML=t(C4.bDS)+`<br>Modulation unique : <b>${fr(C4.Mmax,1)} cm</b>`; $('l5iPBS').innerHTML=t(C4.bPBS)+'<br>Modulation adaptée à chaque position'; }
 };
-NIVEAUX.push({id:'L5',num:'5',court:'Mise en forme',titre:'Mise en forme du faisceau',diapos:'115-148',modules:[modA,modB],quiz:[
+NIVEAUX.push({id:'L5',num:'5',court:'Mise en forme',titre:'Mise en forme du faisceau',diapos:'115-148',modules:[modA,modS,modB],quiz:[
   {q:'Double diffusion : de quoi est fait le second diffuseur ?',c:['Plomb au centre, Lexan à la périphérie','Lexan au centre, plomb à la périphérie','Tantale seulement','Graphite'],r:0,d:'118-119',
    e:'Le plomb (Z élevé) diffuse fortement le centre du faisceau, le Lexan (Z faible) peu la périphérie : le faisceau gaussien devient large et homogène. Les diffuseurs produisent des neutrons.'},
   {q:'En double diffusion, quel accessoire conforme la dose au bord distal de la tumeur ?',c:['Le collimateur','Le compensateur de parcours','La roue de modulation','Le premier diffuseur'],r:1,d:'124-125',
@@ -2205,16 +2177,16 @@ const modA={id:'a',titre:'Marges de parcours',
   }
 };
 /* ---------- Module B : mouvement, interplay, repainting, gating ---------- */
-let modeMv='pbs', phase=0.3, cB=null;
+let techMv='pbs', phase=0.55, cB=null, seancesPrec=[];
 const T6=4, NL6=10, LDOM6=4, TCH6=1, XS6=[]; for(let x=-45;x<=45+1e-9;x+=0.5) XS6.push(+x.toFixed(1));
 function fraction6(o,ph){
-  const mref=o.mode==='gate'?-0.7*o.A:0, D=new Float64Array(XS6.length), mot=t=>o.A*Math.sin(2*Math.PI*(t/T6+ph)), evts=[];
-  const half=20+(o.mode==='ds'?3:6)+(o.itv&&o.mode!=='gate'?o.A:0)+(o.itv&&o.mode==='gate'?0.3*o.A:0);
+  const GW=0.3, mref=o.mode==='gate'?-(1-GW/2)*o.A:0, /* gating : fenêtre = 30 % de l'amplitude, en fin d'expiration */ D=new Float64Array(XS6.length), mot=t=>o.A*Math.sin(2*Math.PI*(t/T6+ph)), evts=[];
+  const half=20+(o.mode==='ds'?3:6)+(o.itv&&o.mode!=='gate'?o.A:0)+(o.itv&&o.mode==='gate'?GW/2*o.A:0);
   if(o.mode==='ds'){ const Ttot=NL6*(o.ts+TCH6), n=400;
     for(let k=0;k<n;k++){ const t=Ttot*(k+0.5)/n, m=mot(t)-mref; XS6.forEach((x,i)=>{ const xr=x+m; D[i]+=0.5*(erf((half-xr)/(2*Math.SQRT2))+erf((half+xr)/(2*Math.SQRT2)))/n; }); if(k%8===0) evts.push([t,m]); }
     return {D,evts,Ttot}; }
   const c=[]; for(let x=-Math.floor((half+2.5)/5)*5;x<=half+2.5+1e-9;x+=5) c.push(x);
-  const dt=o.ts/(c.length*o.N), sg=4, gateOK=m=>o.mode!=='gate'||m<=-o.A+0.6*o.A; let t=0;
+  const dt=o.ts/(c.length*o.N), sg=4, gateOK=m=>o.mode!=='gate'||m<=-o.A+GW*o.A; let t=0;
   for(let l=0;l<NL6;l++){ for(let r=0;r<o.N;r++){ const ordre=(r%2)?c.slice().reverse():c;
       for(const ck of ordre){ if(o.mode==='gate'&&o.A>0){ let g=0; while(!gateOK(mot(t))&&g<100000){t+=0.01;g++;} }
         const m=mot(t); evts.push([t,m,l===LDOM6]); if(l===LDOM6){ const mm=m-mref; XS6.forEach((x,i)=>{ const d=x-(ck-mm); D[i]+=Math.exp(-0.5*d*d/(sg*sg))/o.N; }); } t+=dt; } }
@@ -2222,7 +2194,7 @@ function fraction6(o,ph){
   return {D,evts,Ttot:t};
 }
 function calculB(){
-  const o={A:+$('l8A').value,ts:+$('l8ts').value,N:+$('l8N').value,itv:$('l8itv').checked,mode:modeMv};
+  const o={A:8,ts:2,N:techMv==='repaint'?5:1,itv:true,mode:techMv==='repaint'?'pbs':techMv};
   const stat=fraction6(Object.assign({},o,{A:0}),0);
   const norm=(()=>{let s=0,n=0; XS6.forEach((x,i)=>{if(Math.abs(x)<=10){s+=stat.D[i];n++;}}); return 100/(s/n);})();
   const un=fraction6(o,phase), rnd=hasard(12345), moy=new Float64Array(XS6.length);
@@ -2231,57 +2203,40 @@ function calculB(){
   const ctv=(a,f)=>{let mn=1e9,mx=0,n=0,cv=0; XS6.forEach((x,i)=>{if(Math.abs(x)<=20){mn=Math.min(mn,a[i]);mx=Math.max(mx,a[i]);n++; if(a[i]>=95) cv++;}}); return f==='min'?mn:f==='max'?mx:100*cv/n;};
   cB={o,S,U,M,evts:un.evts,Ttot:un.Ttot,uMin:ctv(U,'min'),uMax:ctv(U,'max'),mMin:ctv(M,'min'),mMax:ctv(M,'max'),mCov:ctv(M,'cov')};
 }
-function reglerB(o){ ['A','ts','N'].forEach(k=>{ if(o[k]!=null) $('l8'+k).value=o[k]; }); if(o.itv!=null) $('l8itv').checked=o.itv; if(o.ph!=null) phase=o.ph; if(o.mode){ modeMv=o.mode; segVal('l8mode',o.mode); } modB.maj(); }
+function reglerB(t,ph){ techMv=t; seancesPrec=[]; segVal('l8mode',t); if(ph!=null) phase=ph; modB.maj(); }
 const modB={id:'b',titre:'Mouvement : effet interplay',
-  html:`<div class="titre-graphe"><h3>Tumeur en mouvement : interplay, repainting, gating</h3>
-      <div class="seg" id="l8mode"><button type="button" data-v="pbs" class="actif">PBS</button><button type="button" data-v="gate">PBS + gating</button><button type="button" data-v="ds">Double diffusion</button></div>
-      <button class="btn" id="l8fx" type="button">Nouvelle fraction (autre phase)</button></div>
-    <div class="legende"><span class="l l-ghost">Sans mouvement</span><span class="l l-dose">1 fraction</span><span class="l l-phi">Moyenne de 30 fractions</span><span class="note">dose dans le repère de la tumeur, à une profondeur de la cible</span></div>
-    <div class="graphe g13"><canvas id="cvMv" aria-label="Profil de dose dans la tumeur en mouvement"></canvas><div class="info" id="l8binfo"></div></div>
-    <div class="graphe g2"><canvas id="cvResp" aria-label="Respiration et instants de délivrance"></canvas></div>
-    <div class="cmd">
-      <div class="curseur"><label for="l8A"><span>Amplitude du mouvement (± mm)</span> <output id="l8Ao"></output></label><input type="range" id="l8A" min="0" max="15" step="1" value="8"></div>
-      <div class="curseur"><label for="l8ts"><span>Durée de balayage d'une couche</span> <output id="l8tso"></output></label><input type="range" id="l8ts" min="0.2" max="4" step="0.1" value="2"></div>
-      <div class="curseur"><label for="l8N"><span>Repainting (passages par couche)</span> <output id="l8No"></output></label><input type="range" id="l8N" min="1" max="8" step="1" value="1"></div>
-      <div class="options"><label><input type="checkbox" id="l8itv" checked> Marge ITV (= amplitude)</label></div>
-    </div>`,
-  sources:'1D latéral. CTV de 40 mm en mouvement sinusoïdal (période 4 s). PBS : spots σ = 4 mm tous les 5 mm, 10 couches, 1 s de changement d\'énergie ; on regarde la dose d\'une couche (ce qui exagère un peu l\'effet). Repainting : chaque couche délivrée N fois avec 1/N du poids. Gating : faisceau en fin d\'expiration seulement. Double diffusion : champ délivré en continu. Idée inspirée de la diapo 201 (Knopf et al. 2013).'+SRC_PEDA,
+  html:`<div class="titre-graphe"><h3>Tumeur qui bouge de ± 8 mm : la dose est-elle homogène ?</h3>
+      <div class="seg" id="l8mode"><button type="button" data-v="pbs" class="actif">PBS</button><button type="button" data-v="repaint">PBS + repainting</button><button type="button" data-v="gate">PBS + gating</button><button type="button" data-v="ds">Double diffusion</button></div>
+      <button class="btn" id="l8fx" type="button">Autre séance</button></div>
+    <div class="legende"><span class="l l-ghost">Tumeur immobile</span><span class="l l-dose">Tumeur qui bouge (1 séance ; en pâle, les séances précédentes)</span><span class="note">bande verte : 95 à 105 %, dose acceptable</span></div>
+    <div class="graphe"><canvas id="cvMv" aria-label="Profil de dose dans la tumeur en mouvement"></canvas><div class="info" id="l8binfo"></div></div>`,
+  sources:'1D latéral. CTV de 40 mm en mouvement sinusoïdal (période 4 s). Mouvement ± 8 mm, marge ITV. PBS : spots σ = 4 mm tous les 5 mm, 10 couches, 2 s par couche, 1 s de changement d\'énergie ; on regarde la dose d\'une couche (ce qui exagère un peu l\'effet). Repainting : chaque couche délivrée 5 fois avec 1/5 du poids. Gating : faisceau en fin d\'expiration seulement (fenêtre = 30 % de l\'amplitude). Double diffusion : champ délivré en continu. Idée inspirée de la diapo 201 (Knopf et al. 2013).'+SRC_PEDA,
   manches:[
-    {id:'1',type:'choix',titre:'Une fraction en PBS',texte:'Tumeur qui bouge de ± 8 mm, PBS en un seul passage, marge ITV. Sur <b>une</b> fraction, la dose dans le CTV est-elle homogène ?',choix:['Oui, la marge ITV suffit','Non : zones sur- et sous-dosées selon la phase (effet interplay)','Non, mais seulement sur les bords'],r:1,regler:()=>reglerB({mode:'pbs',A:8,ts:2,N:1,itv:true,ph:0.3}),
-     e:'Le balayage spot par spot et le mouvement respiratoire se combinent : spots étirés (sous-dosage) ou tassés (surdosage). Cliquez sur « Nouvelle fraction » : le motif change à chaque séance. La marge ITV ne protège pas de cela.'},
-    {id:'2',type:'choix',titre:'Même mouvement en DS',texte:'Même mouvement, mais en <b>double diffusion</b> (marge ITV) :',choix:['Mêmes points chauds et froids','Dose homogène dans le CTV : tout le champ est délivré en même temps','Pire qu\'en PBS'],r:1,regler:()=>reglerB({mode:'pbs',A:8,ts:2,N:1,itv:true,ph:0.3}),apres:()=>reglerB({mode:'ds'}),
+    {id:'1',type:'choix',titre:'Une fraction en PBS',texte:'Tumeur qui bouge de ± 8 mm, PBS en un seul passage, marge ITV. Sur <b>une</b> fraction, la dose dans le CTV est-elle homogène ?',choix:['Oui, la marge ITV suffit','Non : zones sur- et sous-dosées selon la phase (effet interplay)','Non, mais seulement sur les bords'],r:1,regler:()=>reglerB('pbs',0.55),
+     e:'Le balayage spot par spot et le mouvement respiratoire se combinent : spots étirés (sous-dosage) ou tassés (surdosage). Bouton « Autre séance » : le motif change à chaque séance (sur 30 séances, il se moyenne en partie). La marge ITV ne protège pas de cela.'},
+    {id:'2',type:'choix',titre:'Même mouvement en DS',texte:'Même mouvement, mais en <b>double diffusion</b> (marge ITV) :',choix:['Mêmes points chauds et froids','Dose homogène dans le CTV : tout le champ est délivré en même temps','Pire qu\'en PBS'],r:1,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('ds'),
      e:'En DS, la roue de modulation tourne vite et tout le champ est irradié à la fois : le mouvement floute seulement les bords. D\'où la diapo PBS vs DS : « difficulté à traiter des cibles mobiles » en PBS.'},
-    {id:'3',type:'choix',titre:'Repainting',texte:'Retour au PBS : on passe à <b>5 passages par couche</b> (repainting). Effet ?',choix:['Aucun','Les points chauds et froids se moyennent','La dose totale est divisée par 5'],r:1,regler:()=>reglerB({mode:'pbs',A:8,ts:2,N:1,itv:true,ph:0.3}),apres:()=>reglerB({N:5}),
+    {id:'3',type:'choix',titre:'Repainting',texte:'Retour au PBS : on passe à <b>5 passages par couche</b> (repainting). Effet ?',choix:['Aucun','Les points chauds et froids se moyennent','La dose totale est divisée par 5'],r:1,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('repaint'),
      e:'Chaque passage délivre 1/5 de la dose à une phase différente : les erreurs se compensent. Coût : plus de temps morts et des spots de faible poids, limités par le minimum délivrable par la machine.'},
-    {id:'4',type:'choix',titre:'Gating',texte:'PBS avec <b>gating</b> (faisceau seulement en fin d\'expiration). Avantage et limite ?',choix:['Mouvement résiduel plus faible et marges plus petites, mais traitement plus long','Il supprime tout effet du mouvement, sans coût','Il oblige à augmenter les marges'],r:0,regler:()=>reglerB({mode:'pbs',A:8,ts:2,N:1,itv:true,ph:0.3}),apres:()=>reglerB({mode:'gate'}),
-     e:'Ici la fraction passe d\'environ 30 s à 70 s. Un interplay résiduel persiste ; en pratique on combine gating et repainting, ou on traite en inspiration bloquée (diapo 201, cas du sein au level 9).'},
+    {id:'4',type:'choix',titre:'Gating',texte:'PBS avec <b>gating</b> (faisceau seulement en fin d\'expiration). Avantage et limite ?',choix:['Mouvement résiduel plus faible et marges plus petites, mais traitement plus long','Il supprime tout effet du mouvement, sans coût','Il oblige à augmenter les marges'],r:0,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('gate'),
+     e:'Ici la séance passe d\'environ 30 s à 80 s. Un interplay résiduel persiste ; en pratique on combine gating et repainting, ou on traite en inspiration bloquée (diapo 201, cas du sein au level 9).'},
   ],
   maj(){ calculB(); this.redessiner(); },
-  init(){ seg('l8mode',v=>{ modeMv=v; this.maj(); }); ['l8A','l8ts','l8N'].forEach(n=>$(n).addEventListener('input',()=>this.maj())); $('l8itv').addEventListener('change',()=>this.maj());
-    $('l8fx').onclick=()=>{ phase=Math.random(); this.maj(); }; observer(['cvMv','cvResp'],()=>this.redessiner()); this.maj(); },
+  init(){ seg('l8mode',v=>{ techMv=v; seancesPrec=[]; this.maj(); }); $('l8fx').onclick=()=>{ if(cB) seancesPrec=[cB.U].concat(seancesPrec).slice(0,4); let p; do{ p=Math.random(); }while(Math.abs(p-phase)<0.12); phase=p; this.maj(); }; observer(['cvMv'],()=>this.redessiner()); this.maj(); },
   redessiner(){
-    if(!cB) return; const c=cB, o=c.o;
-    $('l8Ao').textContent='± '+o.A+' mm'; $('l8tso').textContent=fr(o.ts,1)+' s'; $('l8No').textContent=o.N+(o.N>1?' passages':' passage'); $('l8N').disabled=o.mode==='ds';
-    $('l8binfo').innerHTML=`1 fraction : <b>${fr(c.uMin,0)} à ${fr(c.uMax,0)} %</b> dans le CTV<br>30 fractions : <b>${fr(c.mMin,0)} à ${fr(c.mMax,0)} %</b><br>Durée d'une fraction : <b>${fr(c.Ttot,0)} s</b>`;
-    let P0=prep($('cvMv'));
+    if(!cB) return; const c=cB, ok=c.uMin>=95&&c.uMax<=105, col=ok?'var(--juste)':'var(--faux)';
+    const fx=$('l8fx'); fx.disabled=techMv!=='pbs'; fx.title=techMv==='pbs'?'Même plan, autre phase respiratoire au début de la séance':techMv==='gate'?'En gating, la séance démarre toujours dans la fenêtre : le résultat ne change pas':'Peu d\'effet visible avec cette technique';
+    $('l8binfo').innerHTML=`Dose dans la tumeur : <b style="color:${col}">${fr(c.uMin,0)} à ${fr(c.uMax,0)} %</b><br>Durée de la séance : <b>${fr(c.Ttot,0)} s</b>`;
+    const P0=prep($('cvMv'));
     if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,17);
       const g={x:fs*3.4,y:fs*0.7,w:W-fs*3.4-fs,h:H-fs*0.7-fs*3}, X=x=>g.x+(x+45)/90*g.w, Y=v=>g.y+g.h-Math.min(v,160)/160*g.h;
       ctx.fillStyle=css('--grille');ctx.globalAlpha=.6;ctx.fillRect(X(-20),g.y,X(20)-X(-20),g.h);ctx.globalAlpha=1;
+      ctx.fillStyle=css('--juste');ctx.globalAlpha=.15;ctx.fillRect(g.x,Y(105),g.w,Y(95)-Y(105));ctx.globalAlpha=1;
       axes(ctx,g,fs,[-40,-20,0,20,40].map(v=>[v,X(v),v]),[0,40,80,120,160].map(v=>[v,Y(v),v]),'Position dans la tumeur (mm)','Dose (%)');
-      etiquette(ctx,'CTV',X(0),g.y+2,css('--texte-2'),fs,'center','top');
+      etiquette(ctx,'tumeur (CTV)',X(0),g.y+2,css('--texte-2'),fs,'center','top');
       ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();
-      [[95,css('--juste')],[105,css('--faux')]].forEach(([v,col])=>trait(ctx,[[g.x,Y(v)],[g.x+g.w,Y(v)]],col,1,[2,3]));
-      const tr=(a,col,lw,d)=>trait(ctx,XS6.map((x,i)=>[X(x),Y(a[i])]),col,lw,d);
-      tr(c.S,css('--ghost'),2,[6,4]); tr(c.M,css('--phi'),2.2); tr(c.U,css('--dose'),3); ctx.restore(); }
-    P0=prep($('cvResp'));
-    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.065,11,16);
-      const g={x:fs*3.4,y:fs*1.6,w:W-fs*3.4-fs,h:H-fs*1.6-fs*3}, tm=Math.max(4,c.Ttot), X=t=>g.x+t/tm*g.w, am=Math.max(5,o.A*1.2), Y=m=>g.y+g.h/2-m/am*(g.h/2);
-      const pas=pas125(tm,8), xt=[]; for(let t=0;t<=tm;t+=pas) xt.push([t,X(t),t]);
-      axes(ctx,g,fs,xt,[-am,0,am].map(v=>[v,Y(v),fr(v,0)]),'Temps (s)','Position (mm)');
-      etiquette(ctx,o.mode==='ds'?'Respiration : en DS, tout le champ est délivré en continu':'Respiration (trait) et spots délivrés (points ; en rose, la couche représentée en haut)',g.x,2,css('--texte'),fs,'left','top');
-      if(o.mode==='gate'){ ctx.fillStyle=css('--phi');ctx.globalAlpha=.12;ctx.fillRect(g.x,Y(-o.A+0.6*o.A),g.w,Y(-o.A)-Y(-o.A+0.6*o.A));ctx.globalAlpha=1; }
-      const pts=[]; for(let k=0;k<=800;k++){ const t=tm*k/800; pts.push([X(t),Y(o.A*Math.sin(2*Math.PI*(t/T6+phase)))]); } trait(ctx,pts,css('--texte-2'),1.5);
-      const st=Math.max(1,Math.floor(c.evts.length/1500)); c.evts.forEach(([t,m,dom],k)=>{ if(k%st&&!dom) return; ctx.fillStyle=dom?css('--S'):css('--dose'); const r=dom?2.5:1.5; ctx.fillRect(X(t)-r,Y(m)-r,2*r,2*r); }); }
+      const tr=(a,cl,lw,d)=>trait(ctx,XS6.map((x,i)=>[X(x),Y(a[i])]),cl,lw,d);
+      tr(c.S,css('--ghost'),2,[6,4]); ctx.globalAlpha=.3; seancesPrec.forEach(a=>tr(a,css('--dose'),1.5)); ctx.globalAlpha=1; tr(c.U,css('--dose'),3); ctx.restore(); }
   }
 };
 NIVEAUX.push({id:'L8',num:'8',court:'Planification',titre:'Planification de traitement',diapos:'186-202',modules:[modA,modB],quiz:[
@@ -2300,122 +2255,31 @@ NIVEAUX.push({id:'L8',num:'8',court:'Planification',titre:'Planification de trai
 
 /* ===================== Level 9 : Exemples de cas cliniques ===================== */
 (function(){
-const CIB=[3,7], ANT=[9,16], ZM=20;
-let SP=null;
-const photon=z=>(1-Math.exp(-z/0.5))*Math.exp(-0.045*(z-1.5));
-function calc(){ if(!SP){ const S=sobp(CIB[0],CIB[1],2,'opt'); SP=S.tot; }
-  const zs=[]; for(let z=0;z<=ZM+1e-9;z+=0.05) zs.push(z);
-  const moyT=f=>{ let s=0,n=0; zs.forEach(z=>{ if(z>=CIB[0]&&z<=CIB[1]){ s+=f(z); n++; } }); return s/n; };
-  const nph=100/moyT(photon), fph=z=>photon(z)*nph, fp=z=>SP[Math.min(N-1,Math.round(z/DZ))];
-  const moyA=f=>{ let s=0,n=0; zs.forEach(z=>{ if(z>=ANT[0]&&z<=ANT[1]){ s+=f(z); n++; } }); return s/n; };
-  const integ=f=>{ let s=0; zs.forEach(z=>{ if(z<CIB[0]||z>CIB[1]) s+=f(z)*0.05; }); return s; };
-  return {zs,fph,fp,antPh:moyA(fph),antP:moyA(fp),intRatio:integ(fp)/integ(fph)};
-}
-const CAS=[
-  ['Médulloblastome (enfant)','36/54 Gy','pas de dose de sortie en avant du rachis (cœur, tube digestif, thyroïde)','jonction des champs'],
-  ['Épendymome (enfant)','59,4 Gy','hippocampes et hypothalamus épargnés (cognition, croissance)','tronc cérébral en fin de parcours','1'],
-  ['Peau du crâne','50/60/70 Gy','dose conformée à la peau, cerveau sous-jacent épargné','couverture en surface sans bolus'],
-  ['Paroi thoracique (TP53)','50 Gy','dose intégrale, cœur et sein controlatéral épargnés','mouvement respiratoire (CT 4D, inspiration bloquée)'],
-  ['Thymus','66 Gy','bain de dose réduit aux poumons et au cœur','mouvement respiratoire','2'],
-  ['Œsophage (réirradiation)','50 Gy','dose cumulée réduite à la moelle et aux poumons','mouvement respiratoire','2'],
-];
-let C9=null;
-const mod={id:'a',titre:'Pourquoi les protons ?',
-  html:`<div class="titre-graphe"><h3>Pourquoi les protons ? La dose de sortie</h3><span class="note">Schéma 1D : faisceau postérieur sur le rachis (médulloblastome), organes en avant.</span></div>
-    <div class="graphe g13" style="min-height:calc(190px*var(--z))"><canvas id="cvCas" aria-label="Dose en profondeur, photons et protons"></canvas><div class="info" id="l9info"></div></div>
-    <div class="chips" id="l9chips"></div>
-    <div class="cmd"><div class="curseur"><label for="l9coeur"><span>Dose moyenne au cœur (paroi thoracique gauche)</span> <output id="l9coeuro"></output></label><input type="range" id="l9coeur" min="0" max="10" step="0.05" value="0.85"></div><div class="note" id="l9darby"></div></div>
-    <div style="overflow:auto;min-height:0;flex:0 1 auto"><table class="fiche" id="l9tab"></table></div>`,
-  sources:'Diapos 204-217 (cas du centre de Caen, synthèse diapo 217). Indications remboursées en France (diapo 204). Risque coronarien : +7,4 % par Gy de dose moyenne au cœur, sans seuil (Darby et al., NEJM 2013, diapo 212). Courbe photons : approximation d\'un faisceau de 6 MV (μ ≈ 0,045 cm⁻¹), schéma seulement.'+SRC_PEDA,
-  manches:[
-    {id:'1',type:'choix',titre:'Épendymome : vigilance',texte:'Épendymome de l\'enfant traité par protons : quel est le <b>point de vigilance</b> ?',choix:['La dose au cristallin','Le tronc cérébral, en fin de parcours','Le mouvement respiratoire','La jonction des champs'],r:1,
-     e:'Le tronc cérébral est juste derrière la cible : fin de parcours, donc incertitude de parcours et EBR plus élevée (levels 7 et 8). D\'où la règle : ne pas finir un faisceau dans un OAR.'},
-    {id:'2',type:'choix',titre:'Thymus et œsophage',texte:'Thymus et œsophage : quel <b>point de vigilance</b> commun ?',choix:['Le mouvement respiratoire','La jonction des champs','La dose à la peau','Un implant sur le trajet'],r:0,
-     e:'Cibles thoraciques : le mouvement respiratoire déplace les structures et crée de l\'interplay en PBS (level 8). CT 4D, gating ou inspiration bloquée (Dyn\'Air pour la paroi thoracique).'},
-    {id:'3',type:'estim',titre:'Risque coronarien',texte:'Paroi thoracique gauche : le risque coronarien augmente de <b>7,4 % par Gy</b> de dose moyenne au cœur. Avec <b>0,85 Gy</b> en protons, quel <b>excès de risque relatif</b> ?',min:0,max:30,pas:0.1,dec:1,def:10,unite:'%',r:0.85*7.4,tol:0.6,aff:'≈ 6,3 %',
-     regler:()=>{ $('l9coeur').value=4; mod.redessiner(); },apres:()=>{ $('l9coeur').value=0.85; mod.redessiner(); },
-     e:'0,85 × 7,4 ≈ 6,3 %, relation linéaire sans seuil (Darby et al. 2013). Chaque Gy épargné compte, d\'où la recherche d\'une Dmoy au cœur aussi basse que possible, surtout chez une patiente porteuse d\'une mutation TP53.'},
-  ],
-  init(){ $('l9coeur').addEventListener('input',()=>this.redessiner()); observer(['cvCas'],()=>this.redessiner()); },
-  redessiner(){
-    if(!C9) C9=calc(); const c=C9, J=this.jeu;
-    const vus=new Set(); const RS=D_().results||{}; this.manches.forEach(m=>{ if(RS['L9_a'+m.id]) vus.add(m.id); }); if(J&&J.revele) vus.add(J.m.id);
-    const ouv=J&&J.m&&!J.revele?J.m.id:null;
-    $('l9tab').innerHTML='<thead><tr><th>Cas</th><th>Prescription</th><th>Pourquoi les protons</th><th>Point de vigilance</th></tr></thead><tbody>'+CAS.map(k=>`<tr><td>${k[0]}</td><td>${k[1]}</td><td>${k[2]}</td><td>${k[4]&&(ouv===k[4]||(!vus.has(k[4])&&J&&J.m&&J.m.id===k[4]))?'<span class="att">?</span>':k[3]}</td></tr>`).join('')+'</tbody>';
-    const dc=+$('l9coeur').value, cach3=ouv==='3'; $('l9coeuro').textContent=fr(dc,2)+' Gy';
-    $('l9darby').innerHTML=cach3?'Excès de risque coronarien : <b>?</b>':`Excès de risque coronarien relatif : <b>+${fr(7.4*dc,1)} %</b> (7,4 %/Gy)`;
-    chips('l9chips',[['Organes antérieurs, photons',fr(c.antPh,0)+' % de la dose'],['Organes antérieurs, protons',fr(c.antP,1)+' %'],['Dose hors cible (protons / photons)',fr(100*c.intRatio,0)+' %']]);
-    $('l9info').innerHTML='Photons : la dose de sortie traverse le cœur, le tube digestif, la thyroïde.<br>Protons : <b>rien au-delà du pic</b>.';
-    const P0=prep($('cvCas')); if(!P0) return; const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,18);
-    const g={x:fs*3.4,y:fs*0.8,w:W-fs*4.4,h:H-fs*5.2}, X=z=>g.x+z/ZM*g.w, Y=v=>g.y+g.h-Math.min(v,130)/130*g.h;
-    ctx.fillStyle='#ef476f'; ctx.globalAlpha=.14; ctx.fillRect(X(CIB[0]),g.y,X(CIB[1])-X(CIB[0]),g.h); ctx.fillStyle='#7b2cbf'; ctx.fillRect(X(ANT[0]),g.y,X(ANT[1])-X(ANT[0]),g.h); ctx.globalAlpha=1;
-    axes(ctx,g,fs,[0,4,8,12,16,20].map(v=>[v,X(v),v]),[0,25,50,75,100,125].map(v=>[v,Y(v),v]),'',"Dose (%)");
-    const yb=g.y+g.h+fs*1.9, hb=fs*1.4;
-    [[0,CIB[0],'#f2c4b6','dos'],[CIB[0],CIB[1],'#ef476f','rachis (cible)'],[CIB[1],ANT[0],'#f2c4b6',''],[ANT[0],ANT[1],'#7b2cbf','cœur, tube digestif…'],[ANT[1],ZM,'#f2c4b6','avant']].forEach(([a,b,col,l])=>{ ctx.fillStyle=col; ctx.fillRect(X(a),yb,X(b)-X(a),hb); if(l) etiquette(ctx,l,(X(a)+X(b))/2,yb+hb/2,col==='#f2c4b6'?'#1b1b1b':'#fff',Math.round(fs*0.85),'center'); });
-    etiquette(ctx,'faisceau postérieur →',g.x,g.y+fs*0.4,css('--texte-2'),Math.round(fs*0.9),'left','top');
-    trait(ctx,c.zs.map(z=>[X(z),Y(c.fph(z))]),css('--ghost'),3); trait(ctx,c.zs.map(z=>[X(z),Y(c.fp(z))]),css('--dose'),3);
-    etiquette(ctx,'photons',X(14),Y(c.fph(14))-fs*0.8,css('--texte-2'),fs,'center'); etiquette(ctx,'protons',X(7.6),Y(60),css('--dose'),fs,'left');
-  }
-};
-NIVEAUX.push({id:'L9',num:'9',court:'Cas cliniques',titre:'Exemples de cas cliniques',diapos:'203-217',modules:[mod],quiz:[
-  {q:'Pour quelles indications la protonthérapie est-elle remboursée en France ?',c:['Prostate et sein','Tumeurs de l\'œil, tumeurs de l\'enfant, chordomes et chondrosarcomes de la base du crâne et du rachis','Toutes les tumeurs du poumon','Toutes les tumeurs, sur avis du radiothérapeute'],r:1,d:'204',
-   e:'Indications « reconnues » par l\'assurance maladie (tumeurs primitives de l\'œil, de l\'enfant, chordomes et chondrosarcomes de la base du crâne et du rachis).'},
-  {q:'Dans ProtonShare (2021), quelle tumeur de l\'enfant est la plus fréquente ?',c:['Médulloblastome','Rhabdomyosarcome','Épendymome','Gliome de bas grade'],r:0,d:'204',
-   e:'Médulloblastome ≈ 24 % des enfants enregistrés (statistique incomplète). Chez l\'adulte, le méningiome arrive en tête.'},
+/* module « Pourquoi les protons ? » retiré : le level 9 se fait uniquement en quiz */
+NIVEAUX.push({id:'L9',num:'9',court:'Cas cliniques',titre:'Exemples de cas cliniques',diapos:'203-217',modules:[],quiz:[
+  {q:'En France, quelles indications de protonthérapie sont remboursées ?',c:['Les indications reconnues, et les autres indications validées en staff médical','Uniquement les indications reconnues : les autres sont à la charge du patient','Toutes les tumeurs, sur simple prescription du radiothérapeute','Uniquement les tumeurs de l\'enfant'],r:0,d:'204',
+   e:'Indications reconnues : tumeurs primitives de l\'œil, tumeurs de l\'enfant, chordomes et chondrosarcomes de la base du crâne et du rachis. Les autres indications sont discutées en staff médical ; une fois validées, elles sont aussi prises en charge.'},
+  {q:'Épendymome de l\'enfant : quel est le bénéfice attendu des protons ?',c:['À couverture égale, moins de dose aux hippocampes et à l\'hypothalamus','Une EBR plus élevée dans la tumeur','Un traitement en moins de séances','Aucune dose au tronc cérébral'],r:0,d:'208',
+   e:'Hippocampes : cognition ; hypothalamus : croissance de l\'enfant.'},
   {q:'Médulloblastome : pourquoi faut-il des jonctions de champs ?',c:['La taille de champ ne couvre pas le volume cranio-spinal en une position de table','Pour moyenner l\'effet interplay','Pour diminuer l\'EBR','Pour limiter les neutrons'],r:0,d:'206',
    e:'Champ maximal 20 × 24 cm sur le Proteus One : plusieurs isocentres, avec un point de vigilance sur les jonctions (sur- ou sous-dosage).'},
   {q:'Paroi thoracique chez une patiente porteuse d\'une mutation TP53 : pourquoi les protons ?',c:['Réduire la dose intégrale, au cœur et au sein controlatéral','Augmenter l\'EBR dans la cible','S\'affranchir du mouvement respiratoire','Raccourcir le traitement'],r:0,d:'210',
    e:'Mutation TP53 : risque de second cancer même à faible dose. Vérification du mouvement au CT 4D, fiduciaires, inspiration bloquée. Ici Dmoy cœur = 0,85 Gy.'},
+  {q:'Médulloblastome de l\'enfant : pourquoi les protons ?',c:['Pas de dose de sortie en avant du rachis (cœur, tube digestif, thyroïde)','Une EBR plus élevée dans le rachis','Plus besoin de jonctions de champs','Un traitement plus court'],r:0,d:'206',
+   e:'Le faisceau postérieur s\'arrête après le rachis : moins de toxicités et de seconds cancers chez l\'enfant. Point de vigilance : les jonctions de champs.'},
+  {q:'Épendymome de l\'enfant traité par protons : quel est le point de vigilance ?',c:['Le tronc cérébral, en fin de parcours','La dose au cristallin','Le mouvement respiratoire','La jonction des champs'],r:0,d:'208',
+   e:'Le tronc cérébral est juste derrière la cible : il reçoit la fin de parcours, là où l\'incertitude de parcours et l\'EBR sont les plus élevées.'},
+  {q:'Thymus et œsophage : quel point de vigilance ont-ils en commun ?',c:['Le mouvement respiratoire','La jonction des champs','La couverture de la peau','Un implant sur le trajet'],r:0,d:'213-216',
+   e:'Cibles thoraciques : le mouvement respiratoire déplace la cible et les tissus traversés (CT 4D, effet interplay, level 8).'},
+  {fixe:true,q:'Risque coronarien : + 7,4 % par Gy de dose moyenne au cœur (Darby). Avec 0,85 Gy en protons, quel excès de risque relatif ?',c:['≈ + 0,9 %','≈ + 6 %','≈ + 7,4 %','≈ + 60 %'],r:1,d:'212',
+   e:'0,85 × 7,4 ≈ 6,3 %. Sans seuil : chaque gray compte, d\'où l\'intérêt de réduire la dose moyenne au cœur.'},
 ]});
 })();
 
 /* ===================== Level 10 : Cas particulier des neutrons ===================== */
 (function(){
-const CAT=[[1e-4,0.005,'froids','#7FB3FF'],[0.005,0.5,'thermiques','#5FD6A8'],[0.5,1e4,'épithermiques','#FFC24D'],[1e4,1e5,'interméd.','#FF8A5C'],[1e5,1e8,'rapides','#D63D63']];
-const fmtE=v=>fmtVal(v,{si:true,unite:'eV'});
-const mod={id:'a',titre:'Le tri des neutrons',
-  html:`<div class="titre-graphe"><h3>Neutrons : énergies, longueurs et comparaison</h3><span class="note">Échelles logarithmiques. Seuils indicatifs : ils varient selon les auteurs.</span></div>
-    <div class="graphe g13" style="min-height:calc(300px*var(--z))"><canvas id="cvNeu" aria-label="Échelles d'énergie et de longueur"></canvas></div>
-    <div style="overflow:auto;min-height:0;flex:0 1 auto"><table class="fiche"><thead><tr><th></th><th>Photons</th><th>Protons</th><th>Neutrons rapides</th></tr></thead><tbody>
-      <tr><td>Particule</td><td>indirectement ionisante</td><td>directement ionisante</td><td>indirectement ionisante</td></tr>
-      <tr><td>Balistique</td><td>atténuation exponentielle</td><td>pic de Bragg, pas de dose distale</td><td>proche des photons, un peu moins bonne</td></tr>
-      <tr><td>EBR</td><td>1 (référence)</td><td>≈ 1,1</td><td>≈ 3</td></tr>
-      <tr><td>OER</td><td>≈ 2,5 à 3</td><td>≈ 2,5 à 3</td><td>≈ 1,6</td></tr>
-      <tr><td>Toxicité tardive</td><td>référence</td><td>réduite (moins de dose intégrale)</td><td>élevée : TEL élevé dans tout le volume</td></tr>
-      <tr><td>Usage actuel</td><td>standard</td><td>en développement</td><td>quasi abandonné</td></tr></tbody></table></div>`,
-  sources:'Diapos 219-224 : classement des neutrons par énergie (seuils indicatifs), neutronthérapie à Orléans (1981-2007, protons de 34 MeV sur béryllium), EBR ≈ 3 et OER ≈ 1,6 (AIEA, TRS 461), BNCT (α et ⁷Li de 5 à 9 µm de parcours).',
-  manches:[
-    {id:'1',type:'estim',titre:'Neutron thermique',texte:'Quelle est l\'énergie typique d\'un neutron <b>thermique</b> ?',min:1e-4,max:1e8,log:true,si:true,def:1,unite:'eV',r:0.025,juste:v=>v>=0.01&&v<=0.1,ecart:v=>Math.abs(Math.log(v/0.025)),bande:[0.01,0.1],aff:'≈ 0,025 eV (agitation thermique à 20 °C)',
-     e:'≈ 0,025 eV (jusqu\'à ≈ 0,5 eV selon les auteurs). En BNCT, ce sont ces neutrons lents qui sont capturés par le ¹⁰B.'},
-    {id:'2',type:'estim',titre:'Neutronthérapie',texte:'Quelle énergie ont les neutrons utilisés en <b>neutronthérapie</b> (neutrons rapides) ?',min:1e-4,max:1e8,log:true,si:true,def:1e3,unite:'eV',r:1e7,juste:v=>v>=1e6&&v<=5e7,ecart:v=>v<1e6?Math.log(1e6/v):v>5e7?Math.log(v/5e7):0,bande:[1e6,5e7],aff:'quelques MeV à quelques dizaines de MeV',
-     e:'Neutrons rapides de quelques MeV à quelques dizaines de MeV. À Orléans (1981-2007), ils étaient produits par des protons de 34 MeV sur une cible de béryllium.'},
-    {id:'3',type:'estim',titre:'Parcours en BNCT',texte:'BNCT : capture d\'un neutron thermique par le ¹⁰B → particule α + ion ⁷Li. Quel est leur <b>parcours</b> dans les tissus ?',min:0.1,max:1e4,log:true,def:100,unite:'µm',r:7,juste:v=>v>=3&&v<=15,ecart:v=>v<5?Math.log(5/v):v>9?Math.log(v/9):0,bande:[3,15],aff:'≈ 5 à 9 µm',
-     e:'≈ 5 à 9 µm, de l\'ordre d\'une cellule, avec un TEL très élevé : l\'irradiation reste confinée aux cellules qui ont capté le bore. Toute la difficulté est de concentrer le ¹⁰B dans la tumeur et non dans les tissus sains.'},
-  ],
-  init(){ observer(['cvNeu'],()=>this.redessiner()); },
-  redessiner(){
-    const P0=prep($('cvNeu')); if(!P0) return; const {c:ctx,W,H}=P0, fs=Math.max(10,Math.min(taillePolice(H,0.045,11,18),Math.floor(H/22))), J=this.jeu, slack=H-22*fs; /* mise en page en unités de police : rien ne se chevauche */
-    const g={x:fs*1.5,w:W-fs*3}, ouv=J&&J.m?J.m.id:null, cach=J&&J.m&&!J.revele;
-    /* échelle d'énergie */
-    const yE=fs*4.4+slack*0.3, XE=v=>g.x+Math.log10(v/1e-4)/12*g.w;
-    etiquette(ctx,'Énergie des neutrons',g.x,fs*0.4,css('--texte'),fs,'left','top');
-    CAT.forEach(([a,b,l,col])=>{ ctx.fillStyle=col; ctx.globalAlpha=.35; ctx.fillRect(XE(a),yE-fs*1.2,XE(b)-XE(a),fs*2.4); ctx.globalAlpha=1; if(!(cach&&ouv==='1'&&l==='thermiques')&&!(cach&&ouv==='2'&&l==='rapides')) etiquette(ctx,l,(XE(a)+XE(b))/2,yE,css('--texte'),fs,'center'); });
-    const gradE={1e-4:'100 µeV',1e-2:'10 meV',1:'1 eV',1e2:'100 eV',1e4:'10 keV',1e6:'1 MeV',1e8:'100 MeV'};
-    [1e-4,1e-2,1,1e2,1e4,1e6,1e8].forEach(v=>{ ctx.strokeStyle=css('--texte-2'); ctx.beginPath(); ctx.moveTo(XE(v),yE+fs*1.2); ctx.lineTo(XE(v),yE+fs*1.6); ctx.stroke(); etiquette(ctx,gradE[v],Math.max(g.x+fs*2,Math.min(g.x+g.w-fs*2,XE(v))),yE+fs*2.3,css('--texte-2'),Math.round(fs*0.85),'center'); });
-    if(!(cach&&(ouv==='1'||ouv==='2'))){ [[0.025,'thermique 0,025 eV'],[34e6,'p 34 MeV → Be (Orléans)']].forEach(([v,l],k)=>{ trait(ctx,[[XE(v),yE-fs*1.2],[XE(v),yE-fs*(2.2+k*0.2)]],css('--dose'),2); etiquette(ctx,l,XE(v)+(k?6:0),yE-fs*(2.7+k*0.2),css('--dose'),Math.round(fs*0.85),k?'right':'center','bottom'); }); }
-    if(J&&J.revele&&(ouv==='1'||ouv==='2')) flechettes(ctx,reponses(this),XE,yE+fs*3.2,1,fs,{x:g.x,w:g.w});
-    /* échelle des longueurs */
-    const yL=yE+fs*12.6+slack*0.45, XL=v=>g.x+Math.log10(v/0.1)/7*g.w;
-    etiquette(ctx,'Longueurs dans les tissus',g.x,yL-fs*5.6,css('--texte'),fs,'left','top');
-    ctx.strokeStyle=css('--texte-2'); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(g.x,yL); ctx.lineTo(g.x+g.w,yL); ctx.stroke(); ctx.lineWidth=1;
-    [[0.1,'0,1 µm'],[1,'1 µm'],[10,'10 µm'],[100,'100 µm'],[1e3,'1 mm'],[1e4,'1 cm'],[1e5,'10 cm'],[1e6,'1 m']].forEach(([v,l])=>{ ctx.beginPath(); ctx.moveTo(XL(v),yL-4); ctx.lineTo(XL(v),yL+4); ctx.stroke(); etiquette(ctx,l,XL(v),yL+fs*1.1,css('--texte-2'),Math.round(fs*0.85),'center'); });
-    const rep=[[10,20,'cellule (≈ 10-20 µm)','#9AA9BA'],[1,1000,'électrons δ (≤ 1 mm)','#7FB3FF'],[4e4,3.3e5,'protons (4 à 33 cm)','#FFC24D']];
-    if(!(cach&&ouv==='3')) rep.unshift([5,9,'α + ⁷Li en BNCT (5-9 µm)','#D63D63']);
-    rep.forEach(([a,b,l,col],k)=>{ const y=yL-fs*(1+k*1.05); ctx.fillStyle=col; ctx.globalAlpha=.75; ctx.fillRect(XL(a),y-fs*0.3,Math.max(3,XL(b)-XL(a)),fs*0.6); ctx.globalAlpha=1; etiquette(ctx,l,Math.min(XL(b)+5,g.x+g.w-fs*8),y,css('--texte'),Math.round(fs*0.8),'left'); });
-    if(J&&J.revele&&ouv==='3') flechettes(ctx,reponses(this),XL,yL+fs*1.9,1,fs,{x:g.x,w:g.w});
-  }
-};
-NIVEAUX.push({id:'L10',num:'10',court:'Neutrons',titre:'Cas particulier des neutrons',diapos:'218-224',modules:[mod],quiz:[
+/* module « Le tri des neutrons » retiré : le level 10 se fait uniquement en quiz */
+NIVEAUX.push({id:'L10',num:'10',court:'Neutrons',titre:'Cas particulier des neutrons',diapos:'218-224',modules:[],quiz:[
   {q:'Les neutrons sont des particules…',c:['directement ionisantes','indirectement ionisantes','chargées','sans interaction avec la matière'],r:1,d:'219',
    e:'Comme les photons : le faisceau est mis en forme comme en photons (collimateurs, puis MLC).'},
   {q:'Quelle était l\'indication reconnue la plus fréquente de la neutronthérapie ?',c:['Les tumeurs des glandes salivaires','Le cancer de la prostate','Le médulloblastome','Le cancer du sein'],r:0,d:'220',
@@ -2424,141 +2288,14 @@ NIVEAUX.push({id:'L10',num:'10',court:'Neutrons',titre:'Cas particulier des neut
    e:'Effet biologique différentiel important, efficace sur les cellules hypoxiques (OER ≈ 3 en photons). Mais pas de pic de Bragg : les tissus sains reçoivent aussi ce TEL élevé.'},
   {q:'Pourquoi la neutronthérapie a-t-elle été presque abandonnée ?',c:['EBR trop faible','Toxicités tardives sévères et balistique médiocre','Coût de l\'électricité','OER trop élevé'],r:1,d:'223',
    e:'Remplacée par les protons et les ions carbone (TEL élevé et meilleure balistique). La recherche continue avec la BNCT.'},
-]});
-})();
-
-/* ===================== Bonus 1 : Défis en cours et à venir ===================== */
-(function(){
-const SEUIL={II:10,III:5,'IV-V':2};
-const PAT=[
-  {id:'1',nom:'Patient A',loc:'ORL',tox:'Xérostomie',de:'de xérostomie',gr:'II',ph:32,pr:24},
-  {id:'2',nom:'Patient B',loc:'ORL',tox:'Dysphagie',de:'de dysphagie',gr:'III',ph:17,pr:11},
-  {id:'3',nom:'Patiente C',loc:'Sein gauche',tox:'Événement coronarien',de:'d\'événement coronarien',gr:'IV-V',ph:4.1,pr:1.6},
-];
-const decision=p=>(p.ph-p.pr)>=SEUIL[p.gr]?0:1;
-const mod={id:'a',titre:'Sélection « model-based »',
-  html:`<div class="titre-graphe"><h3>Protons ou photons ? La sélection fondée sur le ΔNTCP</h3><span class="note">Approche néerlandaise : pour chaque patient, un plan photons et un plan protons, convertis en probabilités de complication (NTCP). Patients fictifs.</span></div>
-    <div class="graphe g13"><canvas id="cvNtcp" aria-label="NTCP photons et protons pour trois patients"></canvas></div>
-    <div style="overflow:auto;min-height:0;flex:0 1 auto"><table class="fiche"><thead><tr><th>Enjeu</th><th>Problème visé</th><th>Défis présentés</th></tr></thead><tbody>
-      <tr><td>Réduire les incertitudes</td><td>parcours, anatomie du jour, dose réellement délivrée</td><td>DECT, adaptatif on-line, imagerie protonique, contrôle du dépôt de dose, IRM, IA</td></tr>
-      <tr><td>Mieux conformer la dose</td><td>balistique, TEL élevé en fin de parcours</td><td>arcthérapie, collimateurs dynamiques, optimisation TEL / EBR</td></tr>
-      <tr><td>Épargner autrement les tissus sains</td><td>débit de dose, répartition spatiale</td><td>FLASH, mini-faisceaux</td></tr>
-      <tr><td>Rendre accessible et prouver</td><td>coût des installations, preuve du bénéfice clinique</td><td>salle sans gantry, accélérateurs compacts, sélection « model-based »</td></tr></tbody></table></div>`,
-  sources:'Diapo 251 : sélection « model-based » (protocoles nationaux néerlandais, ORL 2021 et sein 2022) ; protons indiqués si ΔNTCP ≥ 10 % (grade II), ≥ 5 % (grade III), ≥ 2 % (grade IV-V). Panorama : diapo 226. Les trois patients sont fictifs.',
-  manches:PAT.map(p=>({id:p.id,type:'choix',titre:p.nom+' : '+p.tox.toLowerCase(),texte:`${p.nom} (${p.loc}), risque <b>${p.de} de grade ${p.gr}</b> : NTCP <b>${fr(p.ph,1)} %</b> en photons, <b>${fr(p.pr,1)} %</b> en protons. Quelle technique ?`,
-    choix:['Protons','Photons'],r:decision(p),
-    e:`ΔNTCP = ${fr(p.ph,1)} − ${fr(p.pr,1)} = <b>${fr(p.ph-p.pr,1)} %</b>, seuil de ${SEUIL[p.gr]} % pour un grade ${p.gr} : ${decision(p)===0?'protons indiqués':'le gain ne justifie pas les protons'}. Plus la complication est grave, plus le seuil est bas. Aux Pays-Bas (sein, 2019-2021), 268 des 311 patientes comparées ont été traitées par protons.`})),
-  init(){ observer(['cvNtcp'],()=>this.redessiner()); },
-  redessiner(){
-    const P0=prep($('cvNtcp')); if(!P0) return; const {c:ctx,W,H}=P0, fs=taillePolice(H,0.045,11,18), J=this.jeu;
-    const RS=D_().results||{}; const vu=id=>!!RS['B1_a'+id]||(J&&J.m&&J.m.id===id&&J.revele);
-    const cw=W/3, ymax=40, gy=fs*4.2, gh=H-gy-fs*4.6;
-    PAT.forEach((p,k)=>{ const x0=k*cw+fs, w=cw-2*fs, Y=v=>gy+gh-v/ymax*gh, ouv=J&&J.m&&J.m.id===p.id;
-      ctx.fillStyle=ouv?css('--panneau-2'):'transparent'; if(ouv){ ctx.fillRect(x0-fs*0.5,2,w+fs,H-4); ctx.strokeStyle=css('--dose'); ctx.lineWidth=2; ctx.strokeRect(x0-fs*0.5,2,w+fs,H-4); }
-      etiquette(ctx,p.nom+' · '+p.loc,x0,fs*0.9,css('--texte'),fs,'left');
-      etiquetteAjustee(ctx,p.tox+', grade '+p.gr+' (seuil '+SEUIL[p.gr]+' %)',x0,fs*2.3,css('--texte-2'),Math.round(fs*0.9),'left','middle',w+fs*0.4);
-      const bw=w*0.28; [[p.ph,'photons',css('--ghost'),x0+w*0.12],[p.pr,'protons',css('--dose'),x0+w*0.55]].forEach(([v,l,col,x])=>{ ctx.fillStyle=col; ctx.fillRect(x,Y(v),bw,Y(0)-Y(v)); etiquette(ctx,fr(v,1)+' %',x+bw/2,Y(v)-fs*0.6,css('--texte'),fs,'center'); etiquette(ctx,l,x+bw/2,Y(0)+fs*0.8,css('--texte-2'),Math.round(fs*0.9),'center'); });
-      trait(ctx,[[x0,Y(0)],[x0+w,Y(0)]],css('--trait'),1);
-      const d=p.ph-p.pr; etiquette(ctx,'ΔNTCP = '+fr(d,1)+' %',x0+w/2,Y(0)+fs*2.1,css('--texte'),fs,'center');
-      if(vu(p.id)){ const pro=decision(p)===0; etiquette(ctx,pro?'→ PROTONS':'→ PHOTONS',x0+w/2,Y(0)+fs*3.4,pro?css('--dose'):css('--texte-2'),Math.round(fs*1.15),'center'); }
-      else etiquette(ctx,'→ ?',x0+w/2,Y(0)+fs*3.4,css('--choix'),Math.round(fs*1.15),'center'); });
-  }
-};
-NIVEAUX.push({id:'B1',num:'B1',bonus:true,court:'Défis',titre:'Défis en cours et à venir',diapos:'225-253',modules:[mod],quiz:[
-  {q:'Quel est le principal bénéfice attendu du scanner double énergie (DECT) ?',c:['Mieux connaître les SPR, donc réduire les marges et la dose aux OAR','Raccourcir la durée des séances','Supprimer l\'effet interplay','Augmenter l\'EBR dans la cible'],r:0,d:'227-229',
-   e:'À Dresde, marge passée de 3,5 % + 2 mm à 1,7 % + 2 mm pour les tumeurs cérébrales, avec moins de dose au tronc cérébral et aux nerfs optiques.'},
-  {q:'Radiothérapie FLASH : quel débit de dose ?',c:['≥ 0,03 Gy/s','≥ 40 Gy/s, environ 1000 fois le débit conventionnel','≥ 1 Gy/min','Le même qu\'en conventionnel, en une seule séance'],r:1,d:'247',
-   e:'Effet FLASH observé chez l\'animal : moins de toxicité aux tissus sains, efficacité tumorale conservée. En protons, faisceau en transmission (plateau). Premier essai chez l\'homme : FAST-01 (10 patients, métastases osseuses, 8 Gy).'},
-  {q:'Mini-faisceaux de protons (pMBRT) : quel indicateur caractérise l\'épargne des tissus sains ?',c:['Le rapport pic / vallée (PVDR)','L\'EBR','L\'OER','Le ΔNTCP'],r:0,d:'248',
-   e:'Réseau de faisceaux de moins de 1 mm séparés de quelques mm ; un PVDR élevé épargne les tissus sains. Par diffusion multiple, les faisceaux fusionnent en profondeur et la dose devient homogène dans la tumeur. Stade préclinique.'},
-  {q:'Imagerie protonique : quel est le principal obstacle ?',c:['Une dose trop élevée pour le patient','Une résolution spatiale limitée par la diffusion multiple','Un contraste insuffisant des tissus mous','L\'absence de lien avec les pouvoirs d\'arrêt'],r:1,d:'241',
-   e:'Elle donne directement les pouvoirs d\'arrêt (WEPL), avec un bon contraste et une dose 50 à 100 fois plus faible. Mais la trajectoire des protons n\'est pas rectiligne, et il faut plus de 230 MeV pour traverser le patient.'},
-]});
-})();
-
-/* ===================== Bonus 2 : Contrôles de qualité ===================== */
-(function(){
-const QREF=(()=>{ const c=calcul('p',150,0.005); let i=Math.round(c.zpic/DZ); while(c.D[i]>50) i++;
-  const z50=(i-1+(c.D[i-1]-50)/(c.D[i-1]-c.D[i]))*DZ, pente=(c.D[i-5]-c.D[i+5]);
-  const Dz=z=>{const f=z/DZ-0.5, k=Math.floor(f), t=f-k; return k<0?c.D[0]:k>=N-1?0:c.D[k]*(1-t)+c.D[k+1]*t;};
-  return {z50,pente,Dz}; })();
-const d50=dr=>QREF.Dz(QREF.z50-dr/10);
-const kTP=(T,Pr)=>(273.15+T)/293.15*1013.25/Pr;
-const MATINS=[
-  {id:'1',nom:'Lundi',T:23,P:995,M:97.4,dr:0.05,drRS:-0.1,secu:null,rep:0,
-   e:'k<sub>TP</sub> = 1,029 : la lecture brute (−2,6 %) devient +0,2 % une fois corrigée. Parcours stables : on traite. Piège classique : juger la lecture brute sans corriger température et pression.'},
-  {id:'2',nom:'Mardi',T:19,P:1030,M:99.7,dr:0.1,drRS:0.05,secu:null,rep:2,
-   e:'La lecture brute semble parfaite (−0,3 %), mais k<sub>TP</sub> = 0,980 (froid, haute pression) : écart corrigé −2,2 %, hors tolérance. On ne traite pas avant d\'avoir recontrôlé et compris l\'écart.'},
-  {id:'3',nom:'Mercredi',T:21,P:1008,M:99.3,dr:1.3,drRS:1.3,secu:null,rep:3,
-   e:`Dose correcte (+0,2 %). Au point 50 % distal, la dose passe de 50 % à ≈ ${fr(d50(1.3),0)} % : avec une pente d'environ ${fr(QREF.pente,0)} %/mm, le parcours a augmenté de ≈ 1,3 mm, avec et sans range shifter. C'est l'énergie du faisceau qui a dérivé (sélecteur d'énergie, level 3). Au-delà de ±1 mm : pas de traitement.`},
-  {id:'4',nom:'Jeudi',T:22,P:1012,M:99.0,dr:0.1,drRS:1.5,secu:null,rep:1,
-   e:`Sans range shifter : parcours stable. Avec : ≈ +1,5 mm. Le faisceau est sain, c'est le range shifter qui pose problème (mal inséré, abîmé : c'est le rôle du contrôle « intégrité du range shifter »). On peut traiter les plans sans range shifter.`},
-  {id:'5',nom:'Vendredi',T:20,P:1013,M:100.1,dr:0,drRS:0.1,secu:'Ouverture de porte : faisceau NON coupé',rep:4,
-   e:'Toute la dosimétrie est parfaite, mais un système de sécurité est défaillant : aucune performance dosimétrique ne compense un verrouillage de porte inopérant. Pas de traitement avant réparation et nouveau test.'},
-];
-const OPTIONS=['Traiter normalement','Traiter seulement les plans sans range shifter','Ne pas traiter : dose hors tolérance','Ne pas traiter : parcours hors tolérance','Ne pas traiter : sécurité','Ne pas traiter : position des spots'];
-let qa=0, montre=false;
-const mod={id:'a',titre:'Morning QA',
-  consigne:'Chaque matin : lisez la fiche, calculez les écarts, puis votez sur votre téléphone. Dernière manche : un calcul de γ.',
-  html:`<div class="titre-graphe"><h3>Morning QA : traite-t-on ce matin ?</h3><span class="note" id="b2sous"></span></div>
-    <div style="flex:1 1 0;min-height:0;display:grid;grid-template-columns:1.35fr 1fr;gap:var(--gap)">
-      <div style="overflow:auto;min-height:0"><table class="fiche"><thead><tr><th>Contrôle</th><th>Mesure du jour</th><th>Référence</th><th>Tolérance</th><th>Écart</th><th>Statut</th></tr></thead><tbody id="b2fiche"></tbody></table>
-        <p class="note" id="b2rappel" style="margin-top:8px"></p></div>
-      <div class="graphe"><canvas id="cvD50" aria-label="Bord distal et point 50 %"></canvas></div></div>
-    <div class="graphe g07"><canvas id="cvGamma" aria-label="Indice gamma"></canvas><div class="info" id="b2ginfo"></div></div>`,
-  sources:'Diapos 256-274. CQ quotidien : T et P, sécurité, dose d\'un SOBP avec et sans range shifter (MatriXX + RW3), dose au point 50 % de la pénombre distale (parcours et intégrité du range shifter). Tolérances de l\'exercice : dose ±2 % (tolérance de constance de la diapo 257 ; AAPM TG-224 : ±3 % au quotidien), parcours ±1 mm (TG-224). k<sub>TP</sub> du TRS-398 (20 °C, 1013,25 hPa). Pente du bord distal : protons de 150 MeV, modèle du level 4. Matinées fictives. γ : critères 2 % / 1 mm, taux de passage ≥ 95 % (diapos 266-267).',
-  manches:MATINS.map((m,i)=>({id:m.id,type:'choix',titre:m.nom+' matin',texte:`<b>${m.nom} matin</b> : quelle décision ?`,choix:OPTIONS,r:m.rep,e:m.e,regler:()=>{ qa=i; mod.redessiner(); }})).concat([
-    {id:'6',type:'estim',titre:'Indice γ d\'un point',texte:'CQ patient (MatriXX, critères <b>1 mm / 2 %</b>). Pour un point : écart de position <b>0,6 mm</b>, écart de dose <b>1,5 %</b>. Que vaut γ ?',min:0,max:2,pas:0.01,dec:2,def:0.5,unite:'',r:Math.hypot(0.6/1,1.5/2),tol:0.05,aff:'γ ≈ 0,96 ≤ 1 : point OK',
-     e:'γ = √[(0,6/1)² + (1,5/2)²] = √(0,36 + 0,5625) ≈ 0,96. Point validé de justesse. Sur l\'ensemble des pixels, le taux de passage doit atteindre au moins 95 %.'}]),
-  init(){ observer(['cvD50','cvGamma'],()=>this.redessiner()); },
-  redessiner(){
-    const J=this.jeu, mi=J&&J.m&&+J.m.id<=5?+J.m.id-1:qa; qa=mi; const m=MATINS[mi]; montre=!J||!J.m||J.revele||+J.m.id>5;
-    if(J&&J.m&&+J.m.id<=5) montre=J.revele;
-    const k=kTP(m.T,m.P), Mc=m.M*k, ec=(Mc/100-1)*100;
-    $('b2sous').textContent=`${m.nom} : T = ${fr(m.T,0)} °C, P = ${fr(m.P,0)} hPa`;
-    const st=ok=>montre?(ok?'<span class="ok">✓ OK</span>':'<span class="ko">✗ Hors tol.</span>'):'<span class="att">?</span>', v=x=>montre?x:'<span class="att">à calculer</span>';
-    const L=[
-      ['Sécurité',m.secu?`<span class="${montre?'ko':''}">${m.secu}</span>`:'Tous les tests OK','Tous OK','aucun défaut','—',montre?(m.secu?'<span class="ko">✗ KO</span>':'<span class="ok">✓ OK</span>'):'<span class="att">?</span>'],
-      ['Dose SOBP<br><small>sans range shifter</small>',`${fr(m.M,1)} <small>(lecture brute)</small>`,'100,0 <small>(20 °C, 1013 hPa)</small>','± 2 %',v(`k<sub>TP</sub> = ${fr(k,3)}<br>${fr(Mc,1)} → <b>${frs(ec,1)} %</b>`),st(Math.abs(ec)<=2)],
-      ['Dose au point 50 % distal<br><small>sans range shifter</small>',`${fr(d50(m.dr),1)} %`,'50,0 %','parcours ± 1 mm',v(`<b>${frs(m.dr,1)} mm</b>`),st(Math.abs(m.dr)<=1)],
-      ['Dose au point 50 % distal<br><small>avec range shifter</small>',`${fr(d50(m.drRS),1)} %`,'50,0 %','parcours ± 1 mm',v(`<b>${frs(m.drRS,1)} mm</b>`),st(Math.abs(m.drRS)<=1)]];
-    $('b2fiche').innerHTML=L.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
-    $('b2rappel').innerHTML=`k<sub>TP</sub> = (273,15 + T) / 293,15 × 1013,25 / P. Au point 50 % du bord distal, la pente vaut ≈ <b>${fr(QREF.pente,0)} % par mm</b> : une dose plus forte à cet endroit signifie un parcours plus long.`;
-    let P0=prep($('cvD50'));
-    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,16); const g={x:fs*3.2,y:fs*1.6,w:W-fs*4.2,h:H-fs*4.6};
-      const zc=QREF.z50*10, X=mm=>g.x+(mm-(zc-6))/12*g.w, Y=v=>g.y+g.h-v/110*g.h;
-      axes(ctx,g,fs,[-6,-3,0,3,6].map(d=>[d,X(zc+d),(d>0?'+':'')+d]),[0,50,100].map(v=>[v,Y(v),v]),'Profondeur autour du point 50 % (mm)','Dose (%)');
-      etiquetteAjustee(ctx,'Bord distal : référence (tirets) et mesures du jour',g.x,2,css('--texte'),fs,'left','top',W-g.x-4);
-      const tr=(dr,col,dash,lw)=>{ const pts=[]; for(let mm=zc-6;mm<=zc+6;mm+=0.05) pts.push([X(mm),Y(QREF.Dz((mm-dr)/10))]); trait(ctx,pts,col,lw,dash); };
-      ctx.save(); ctx.beginPath(); ctx.rect(g.x,g.y,g.w,g.h); ctx.clip();
-      tr(0,css('--ghost'),[6,4],2); if(montre){ tr(m.dr,css('--dose'),[],2.5); tr(m.drRS,css('--S'),[3,3],2.5); }
-      trait(ctx,[[X(zc),g.y],[X(zc),g.y+g.h]],css('--texte-2'),1,[2,3]);
-      { const L2=[[d50(m.dr),css('--dose'),'sans RS'],[d50(m.drRS),css('--S'),'avec RS']]; L2.forEach(([v,col])=>rond(ctx,X(zc),Y(v),5,col));
-        const yA=Y(L2[0][0]), yB=Y(L2[1][0]), haut=yA<=yB?0:1, ym=(yA+yB)/2, ec=Math.max(fs*0.65,Math.abs(yA-yB)/2+fs*0.1);
-        L2.forEach(([v,col,l],kk)=>etiquette(ctx,`${l} : ${fr(v,0)} %`,X(zc)+8,kk===haut?Math.min(Y(v),ym-ec):Math.max(Y(v),ym+ec),col,fs,'left')); }
-      ctx.restore(); }
-    /* gamma : point mesuré dans le plan (Δr, ΔD), ellipse d'acceptation */
-    const gm=J&&J.m&&J.m.id==='6', rev=gm&&J.revele;
-    $('b2ginfo').innerHTML=gm?(rev?'γ = √[(Δr/1 mm)² + (ΔD/2 %)²] ≈ <b>0,96</b> ≤ 1 : OK':'γ = √[(Δr/1 mm)² + (ΔD/2 %)²]'):'Indice γ : un point passe s\'il tombe dans l\'ellipse 1 mm × 2 %';
-    P0=prep($('cvGamma'));
-    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.1,11,15); const cx=W*0.22, cy=H/2, sy=H*0.36, sx=Math.min(W*0.12,sy*1.6);
-      ctx.strokeStyle=css('--trait'); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(cx-sx*1.5,cy); ctx.lineTo(cx+sx*1.5,cy); ctx.moveTo(cx,cy-sy*1.25); ctx.lineTo(cx,cy+sy*1.25); ctx.stroke();
-      ctx.fillStyle=css('--juste'); ctx.globalAlpha=.18; ctx.beginPath(); ctx.ellipse(cx,cy,sx,sy,0,0,7); ctx.fill(); ctx.globalAlpha=1; ctx.strokeStyle=css('--juste'); ctx.lineWidth=2; ctx.stroke();
-      etiquette(ctx,'Δr',cx+sx*1.5,cy+fs*0.8,css('--texte-2'),fs,'right'); etiquette(ctx,'ΔD',cx+6,cy-sy*1.25,css('--texte-2'),fs,'left','top');
-      etiquette(ctx,'1 mm',cx+sx,cy+fs*0.8,css('--texte-2'),Math.round(fs*0.9),'center'); etiquette(ctx,'2 %',cx-5,cy-sy,css('--texte-2'),Math.round(fs*0.9),'right');
-      if(gm){ const px=cx+0.6*sx, py=cy-1.5/2*sy; rond(ctx,px,py,6,rev?css('--juste'):css('--dose')); etiquette(ctx,'(0,6 mm ; 1,5 %)',px+9,py,css('--texte'),fs,'left'); }
-      texteLignes(ctx,'CQ patient : γ ≤ 1 pour au moins 95 % des points (2 % / 1 mm, Caen)',cx+sx*1.8,cy,css('--texte-2'),fs,W-(cx+sx*1.8)-8); }
-  }
-};
-NIVEAUX.push({id:'B2',num:'B2',bonus:true,court:'CQ',titre:'Contrôles de qualité',diapos:'254-274',modules:[mod],quiz:[
-  {fixe:true,q:'CQ des plans patients à Caen (MatriXX, γ 2 % / 1 mm) : quel taux de passage minimal ?',c:['≥ 90 %','≥ 95 %','≥ 99 %','100 %'],r:1,d:'267',
-   e:'Recalcul du plan dans des plaques RW3, mesure à au moins 2 profondeurs. Limites : faible résolution de la MatriXX, mesure 2D. TG-218 : 3 % / 2 mm, ≥ 95 %.'},
-  {fixe:true,q:'Concordance entre isocentre d\'imagerie kV et isocentre du faisceau : tolérance à Caen ?',c:['0,5 mm','1 mm','2 mm','5 mm'],r:0,d:'261',
-   e:'Contrôle hebdomadaire (bras à 0°, 45° et 90°) avec le Lynx PT et une bille dense. AAPM : ±1 mm.'},
-  {q:'Fichiers log en PBS : d\'où viennent les informations enregistrées ?',c:['Des chambres moniteurs IC1 et IC2 de la nozzle','De la MatriXX','Du Lynx PT','Du scanner de planification'],r:0,d:'268-270',
-   e:'Position et UM de chaque spot. Exemple du cours : un défaut d\'alimentation des aimants de balayage, détecté par les logs, aurait fait baisser la D50 % du CTV de 3,4 % (59,6 → 57,6 Gy).'},
-  {q:'Qu\'est-ce qu\'un contrôle End-to-End ?',c:['Toute la chaîne testée d\'un bloc sur fantôme : scanner, TPS, transfert, positionnement, irradiation, mesure','La mesure de dose de référence dans la cuve à eau','Le contrôle de la table 6D','Le CQ quotidien du matin'],r:0,d:'271-273',
-   e:'Scan d\'un fantôme anthropomorphe (avec hétérogénéités), dosimétrie dans le TPS, transfert, mesure sous la machine, comparaison mesure / calcul.'},
+  {fixe:true,q:'Quelle est l\'énergie typique d\'un neutron thermique ?',c:['≈ 0,025 eV','≈ 25 eV','≈ 25 keV','≈ 2,5 MeV'],r:0,d:'219',
+   e:'Agitation thermique à 20 °C (jusqu\'à ≈ 0,5 eV selon les auteurs). Ce sont ces neutrons lents qui sont capturés par le ¹⁰B en BNCT.'},
+  {q:'Neutronthérapie à Orléans (1981-2007) : comment étaient produits les neutrons rapides ?',c:['Protons de 34 MeV sur une cible de béryllium','Fission dans un réacteur','Électrons de 25 MeV sur une cible de tungstène','Désintégration d\'une source de californium'],r:0,d:'219',
+   e:'Réaction p + Be : neutrons rapides, de quelques MeV à quelques dizaines de MeV.'},
+  {q:'BNCT : quel est le principe ?',c:['Un neutron thermique capturé par le ¹⁰B émet une particule α et un ion ⁷Li','Les neutrons rapides déposent leur énergie en fin de parcours','Le bore absorbe les neutrons pour protéger les tissus sains','Le bore rend la tumeur visible en imagerie'],r:0,d:'223',
+   e:'α et ⁷Li ont un parcours de ≈ 5 à 9 µm, de l\'ordre d\'une cellule, avec un TEL très élevé : l\'irradiation reste confinée aux cellules qui ont capté le bore.'},
+  {q:'BNCT : quelle est la principale difficulté ?',c:['Concentrer le ¹⁰B dans la tumeur et non dans les tissus sains','Produire des neutrons assez énergétiques','Le parcours trop long des particules α','L\'EBR trop faible des ions ⁷Li'],r:0,d:'223',
+   e:'Toute la sélectivité vient de la distribution du bore : là où il y a du ¹⁰B, la dose est très élevée.'},
 ]});
 })();
 
