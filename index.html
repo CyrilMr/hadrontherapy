@@ -152,6 +152,8 @@ aside.carte{display:flex;flex-direction:column;overflow:auto;gap:8px;}
 .gagnants{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
 .gagnants span{font-size:calc(12px*var(--z)*var(--t-s));padding:1px 8px;border-radius:999px;background:var(--juste);color:#fff;}
 .gagnants span.best{background:var(--dose);color:#0C1A2B;font-weight:700;}
+.reglages{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;} .reglages span{font-size:calc(var(--f-s)*.92);padding:1px 8px;border-radius:999px;border:1px solid var(--trait);}
+.reglages .ok{background:color-mix(in srgb,var(--juste) 18%,transparent);border-color:var(--juste);} .reglages .ko{color:var(--texte-2);} .reglages .best{font-weight:700;border-color:var(--dose);}
 .choix-m{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;}
 .choix-m div{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:8px;border:1px solid var(--trait);background:var(--panneau);font-size:var(--f-s);position:relative;overflow:hidden;}
 .choix-m div i{position:absolute;inset:0 auto 0 0;background:color-mix(in srgb,var(--choix) 18%,transparent);}
@@ -245,6 +247,7 @@ dialog#dlgLive::backdrop{background:rgba(12,26,43,.55);}
 .acc-qr .qr{min-height:0;}
 .acc-code{font-size:var(--f-l);} .acc-code b{letter-spacing:.15em;font-size:1.35em;}
 .acc-etapes{margin:0;padding-left:1.4em;text-align:left;font-size:var(--f);color:var(--texte-2);}
+.acc-pc{font-size:var(--f-s);color:var(--texte-2);border-top:1px solid var(--trait);padding-top:8px;word-break:break-all;} .acc-pc b{color:var(--texte);}
 .acc-vide{max-width:calc(300px*var(--z));color:var(--texte-2);font-size:var(--f);} .acc-vide span{font-size:calc(var(--f-xl)*2);}
 .acc-noms,.acc-humeur{display:flex;flex-direction:column;gap:8px;overflow:auto;}
 .acc-cpt{font-size:var(--f-l);} .acc-cpt b{color:var(--juste);}
@@ -275,8 +278,10 @@ body.eleve{display:block;overflow:auto;height:auto;min-height:100%;font-size:18p
 .el-att{color:var(--texte-2);text-align:center;margin-top:22vh;}
 .el-att .gros{font-size:44px;display:block;margin-bottom:8px;}
 .el-noms{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.el-code{display:flex;flex-direction:column;gap:12px;margin-top:12px;} .el-code input{font:inherit;font-size:2em;letter-spacing:.3em;text-align:center;text-transform:uppercase;padding:10px;border-radius:12px;border:1px solid var(--trait);background:var(--panneau);color:var(--texte);}
 .el-noms button{font:inherit;color:inherit;text-align:left;padding:14px;border-radius:12px;border:1px solid var(--trait);background:var(--panneau);cursor:pointer;}
 .el-noms button:disabled{opacity:.45;}
+.el-noms button.pris{opacity:.55;border-style:dashed;}
 .el-note{font-size:14px;color:var(--texte-2);}
 .el-lv{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-2);}
 .el-q{font-weight:600;font-size:19px;margin:4px 0 14px;line-height:1.3;}
@@ -312,6 +317,13 @@ body.eleve{display:block;overflow:auto;height:auto;min-height:100%;font-size:18p
 .el-voisins{display:flex;justify-content:space-between;font-size:14px;color:var(--texte-2);margin-top:2px;gap:8px;}
 .el-cv{position:relative;width:100%;aspect-ratio:1.5;border-radius:12px;border:1px solid var(--trait);background:var(--panneau);overflow:hidden;}
 .el-cv canvas{cursor:crosshair;}
+.el-cv.el-labo{aspect-ratio:1.7;} .el-cv.el-labo canvas{cursor:default;}
+.el-statut{margin:6px 0 2px;padding:6px 10px;border-radius:10px;background:var(--panneau-2);font-size:15px;font-weight:600;text-align:center;}
+.el-statut.ok{background:color-mix(in srgb,var(--juste) 22%,transparent);color:var(--juste);}
+.el-ctrl{margin-top:8px;} .el-ctrl-t{display:flex;justify-content:space-between;font-size:14px;color:var(--texte-2);} .el-ctrl-t b{color:var(--texte);font-size:18px;font-variant-numeric:tabular-nums;}
+.el-seg{display:flex;gap:6px;margin-top:4px;} .el-seg button{flex:1;font:inherit;padding:10px 4px;border-radius:10px;border:1px solid var(--trait);background:var(--panneau);cursor:pointer;}
+.el-seg button.actif{background:var(--choix);border-color:var(--choix);color:#fff;font-weight:700;}
+.el-pm{touch-action:manipulation;user-select:none;-webkit-user-select:none;}
 .stripw{position:relative;height:calc(74px*var(--z)*var(--t-m));margin-top:6px;}
 .golf-log{font-size:14px;color:var(--texte-2);margin-top:8px;font-variant-numeric:tabular-nums;}
 
@@ -555,6 +567,7 @@ function gauss(rnd){ let u=0,v=0; while(u===0) u=rnd(); while(v===0) v=rnd(); re
 function chargerScript(urls){ urls=[].concat(urls);
   return new Promise((ok,ko)=>{ const essai=i=>{ if(i>=urls.length) return ko(new Error('script')); const s=document.createElement('script'); s.src=urls[i]; s.onload=()=>ok(); s.onerror=()=>{s.remove();essai(i+1);}; document.head.appendChild(s); }; essai(0); }); }
 const FB_VER='10.14.1';
+const DB_DEFAUT='https://hadrontherapy-game-default-rtdb.europe-west1.firebasedatabase.app'; /* base utilisée quand le lien n'en précise pas (adresse courte « ?e ») */
 function urlsFB(n){ return ['https://cdn.jsdelivr.net/npm/firebase@'+FB_VER+'/firebase-'+n+'-compat.js','https://www.gstatic.com/firebasejs/'+FB_VER+'/firebase-'+n+'-compat.js']; }
 async function backendFirebase(url){
   if(!window.firebase){ await chargerScript(urlsFB('app')); }
@@ -586,10 +599,14 @@ function backendLocal(){ /* démo sans serveur : localStorage + BroadcastChannel
     get(p){ const v=getp(lire(),p); return Promise.resolve(v===undefined?null:tab(v)); },
     /* émulation des règles de sécurité Firebase pour la démo */
     voter(code,q,id,c){ const d=lire(), e=getp(d,'sessions/'+code+'/etat'); if(typeof c!=='number'||!e||e.q!==q||e.revele!==false||getp(d,'sessions/'+code+'/results/'+q)||getp(d,'sessions/'+code+'/votes/'+q+'/'+id)) return Promise.reject(new Error('clos')); setp(d,'sessions/'+code+'/votes/'+q+'/'+id,{c,t:{'.sv':'timestamp'}}); ecrire(d); return Promise.resolve(); },
-    rejoindre(code,id,tok){ const d=lire(), x=getp(d,'sessions/'+code+'/joined/'+id); if(x&&x!==tok) return Promise.reject(new Error('pris')); setp(d,'sessions/'+code+'/joined/'+id,tok); ecrire(d); return Promise.resolve(); } };
+    rejoindre(code,id,tok,reprendre){ const d=lire(), x=getp(d,'sessions/'+code+'/joined/'+id); if(x&&x!==tok&&!reprendre) return Promise.reject(new Error('pris')); setp(d,'sessions/'+code+'/joined/'+id,tok); ecrire(d); return Promise.resolve(); } };
 }
 function fbVoter(B,code,q,id,c){ return B.voter?B.voter(code,q,id,c):B.set('sessions/'+code+'/votes/'+q+'/'+id,{c,t:B.TS}); }
-function fbRejoindre(B,code,id,tok){ return B.rejoindre?B.rejoindre(code,id,tok):B.set('sessions/'+code+'/joined/'+id,tok); }
+function fbRejoindre(B,code,id,tok,reprendre){ return B.rejoindre?B.rejoindre(code,id,tok,reprendre):B.set('sessions/'+code+'/joined/'+id,tok); }
+/* étudiants connectés (seuls les prénoms de la liste comptent) */
+const connectes=D=>Object.keys((D&&D.joined)||{}).filter(id=>((D&&D.roster)||{})[id]);
+/* vérifie que les règles Firebase permettent de reprendre et de libérer un prénom (règles du 22/10/2026) */
+async function sonderRegles(B,code){ const p='sessions/'+code+'/joined/~sonde'; try{ await B.set(p,'a'); await B.set(p,'b'); await B.set(p,null); return true; }catch(e){ return false; } }
 
 /* Points : chaque manche ou question corrigée enregistre ok = {id: points} et best = id (+1 bonus).
    Quiz : 1 pt par bonne réponse, +1 au plus rapide parmi les bonnes réponses.
@@ -637,6 +654,347 @@ async function importerFichier(f){
   throw new Error('format attendu : fichier .csv « Prénom;Initiale nom »');
 }
 
+/* ===================== Labo sur téléphone : l'étudiant règle des curseurs pour répondre ===================== */
+/* Une manche de type « labo » envoie sur les téléphones une petite simulation (sim) et des réglages (cfg).
+   L'étudiant joue avec les commandes, voit le résultat en direct, puis valide : juste si l'objectif est atteint,
+   bonus au plus rapide parmi les justes. Les réglages sont codés dans un seul entier (vote c). */
+
+/* ---- dipôle de 60° (level 3) ---- */
+const RHO0=1.29, TH0=Math.PI/3, LDR=1.2, TOLR=0.025;
+function trajectoire(rho){ /* dipôle secteur de 60°, entrée en (0,0) vers +x ; renvoie points (m), offset final (m) ou perdu */
+  const pts=[], C0y=RHO0, s0=Math.sin(TH0), c0=Math.cos(TH0);
+  const F=ph=>s0*(rho*(1-Math.cos(ph))-C0y)+c0*rho*Math.sin(ph);
+  let phi=null, prev=F(1e-4);
+  for(let ph=0.002;ph<Math.PI*1.5;ph+=0.002){ const v=F(ph); if(prev<0&&v>=0||prev>0&&v<=0){ phi=ph; break; } prev=v; }
+  const lim=phi==null?Math.min(Math.PI,2*Math.asin(Math.min(1,0.5/rho))+0.3):phi;
+  for(let ph=0;ph<=lim+1e-9;ph+=lim/80) pts.push([rho*Math.sin(ph),rho*(1-Math.cos(ph))]);
+  if(phi==null) return {pts,perdu:true,off:Infinity};
+  const P_=[rho*Math.sin(phi),rho*(1-Math.cos(phi))], d=[Math.cos(phi),Math.sin(phi)];
+  const E0=[RHO0*s0+LDR*c0,RHO0*(1-c0)+LDR*s0], n0=[c0,s0], t0=[-s0,c0];
+  const den=d[0]*n0[0]+d[1]*n0[1]; if(den<=0.05) return {pts,perdu:true,off:Infinity};
+  const s=((E0[0]-P_[0])*n0[0]+(E0[1]-P_[1])*n0[1])/den, F2=[P_[0]+s*d[0],P_[1]+s*d[1]];
+  pts.push(F2); const off=(F2[0]-E0[0])*t0[0]+(F2[1]-E0[1])*t0[1];
+  return {pts,perdu:false,off};
+}
+const OUV=Math.abs(trajectoire(RHO0*(1+TOLR)).off); /* demi-ouverture du tube : tolérance ±2,5 % sur B */
+
+/* ---- os cortical (level 4) : 2 cm à 3-5 cm, SPR 1,65 ---- */
+const OS4={a:3,b:5,spr:1.65};
+const zDeOs=w=>{ if(w<=OS4.a) return w; const wb=OS4.a+(OS4.b-OS4.a)*OS4.spr; return w<=wb?OS4.a+(w-OS4.a)/OS4.spr:w-(OS4.b-OS4.a)*(OS4.spr-1); };
+const wetDeOs=z=>z+(OS4.spr-1)*Math.max(0,Math.min(z,OS4.b)-OS4.a);
+
+/* ---- superposition de spots gaussiens (level 5) ---- */
+function lateral(sig,sp){
+  const W=30, n=Math.floor(W/sp+1e-9), pos=[]; for(let k=-n;k<=n;k++) pos.push(k*sp);
+  const xs=[], ys=[]; for(let x=-45;x<=45+1e-9;x+=0.1){ let a=0; pos.forEach(c=>a+=Math.exp(-0.5*(x-c)*(x-c)/(sig*sig))); xs.push(x); ys.push(a); }
+  const ctr=ys.filter((_,i)=>Math.abs(xs[i])<=20), moy=ctr.reduce((a,b)=>a+b)/ctr.length;
+  const y=ys.map(v=>100*v/moy), c2=ctr.map(v=>100*v/moy);
+  return {sig,sp,pos,xs,y,moy,ond:(Math.max(...c2)-Math.min(...c2))/2,ratio:sp/(2.355*sig)};
+}
+/* plus petit nombre de spots qui garde l'ondulation sous le seuil (et espacement correspondant) */
+function spotsMin(sig,seuil){ let best=null; for(let sp=16;sp>=2-1e-9;sp-=0.2){ const L=lateral(sig,+sp.toFixed(1)); if(L.ond<=seuil){ if(!best||L.pos.length<best.n) best={n:L.pos.length,sp:+sp.toFixed(1)}; } } return best; }
+
+/* ---- dégradeur et sélecteur d'énergie (level 3) ---- */
+function ess(E,d){ const R0=Rbk(230), R=Rbk(E), t=R0-R, sR=Math.sqrt(Math.max(0,sigStrag(R0)**2-sigStrag(R)**2)), rel=Math.max(1e-6,sR/(P*R));
+  const a=d/rel, fE=erf(a/Math.SQRT2), phi=Math.exp(-a*a/2)/Math.sqrt(2*Math.PI), vr=Math.max(0,1-2*a*phi/Math.max(1e-9,fE));
+  const nuc=Math.exp(-0.012*t); return {t,rel,fE,nuc,T:fE*nuc,relOut:rel*Math.sqrt(vr)}; }
+
+/* ---- carte de dose 2D, double diffusion ou balayage (level 5) ---- */
+const ES=14.1, X0=36.08;
+function sigmaMCS(E){ const b=calcul('p',E,0.005), sM=new Float64Array(N); let A0=0,A1=0,A2=0;
+  for(let i=0;i<N;i++){ const zm=i*DZ+DZ/2, u=b.R0-zm;
+    if(u>0){ const T=Math.pow(u/A,1/P), pc=Math.sqrt(T*T+2*T*MP), pv=pc*pc/(T+MP), t=Math.pow(ES/pv,2)/X0; A0+=t*DZ; A1+=zm*t*DZ; A2+=zm*zm*t*DZ; }
+    const z=Math.min(zm,b.R0); sM[i]=Math.sqrt(Math.max(0,z*z*A0-2*z*A1+A2))*10; }
+  return sM; }
+const ZREF=14.5, XG=[], ZG=[]; for(let x=-40;x<=40;x++) XG.push(x); for(let z=0;z<=18.0001;z+=0.1) ZG.push(+z.toFixed(1));
+const FORMES2={
+  ellipse:x=>{const a=25; if(Math.abs(x)>a) return null; const h=2.5*Math.sqrt(1-(x/a)**2); return h<0.15?null:{zp:11.5-h,zd:11.5+h};},
+  coque:x=>{const a=28; if(Math.abs(x)>a) return null; const zd=14-2.5*(1-(x/a)**2); return {zp:zd-2,zd};},
+  coin:x=>{const a=25; if(Math.abs(x)>a) return null; return {zp:9+4*(x+a)/(2*a),zd:14};},
+};
+const gabarits=new Map(); let sMref=null;
+function gabarit(M){ const k=M.toFixed(1); if(!gabarits.has(k)) gabarits.set(k, sobp(ZREF-M,ZREF,5,'opt').tot); return gabarits.get(k); }
+function colonne(T,shift){ return ZG.map(z=>{const i=Math.round((z+shift)/DZ); return (i>=0&&i<N)?T[i]:0;}); }
+function flou(M,sig){ const out=M.map(c=>c.slice());
+  for(let iz=0;iz<ZG.length;iz++){ const sg=Math.max(0.3,sig(ZG[iz])), m=Math.ceil(4*sg); const ker=[]; let sk=0;
+    for(let j=-m;j<=m;j++){const v=Math.exp(-0.5*j*j/(sg*sg)); ker.push(v); sk+=v;}
+    for(let ix=0;ix<XG.length;ix++){ let a=0; for(let j=-m;j<=m;j++){const q=ix-j; if(q>=0&&q<XG.length) a+=ker[j+m]*M[q][iz];} out[ix][iz]=a/sk; } }
+  return out; }
+function bilan(D,F){ let cible=0,couv=0,sain=0;
+  XG.forEach((x,ix)=>{const t=F(x); ZG.forEach((z,iz)=>{ const dedans=t&&z>=t.zp&&z<=t.zd, d=D[ix][iz]; if(dedans){cible++; if(d>=95) couv++;} else if(d>=90) sain++; });});
+  return {couv:100*couv/cible, sain:sain*0.01}; }
+function elargie(F,m,mz){ return x=>{ let t=F(x); for(let d=0.5;!t&&d<=m+1e-9;d+=0.5) t=F(x-d)||F(x+d); return t?{zp:t.zp-mz,zd:t.zd+mz}:null; }; }
+
+function doseCarte(forme,sig){
+  const F=FORMES2[forme];
+  if(!sMref){ const sM=sigmaMCS(Ebk(ZREF+0.2)); sMref=z=>sM[Math.min(N-1,Math.max(0,Math.floor(z/DZ)))]; }
+  const sDS=z=>Math.sqrt(1.5*1.5+sMref(z)**2), sPBS=z=>Math.sqrt(sig*sig+sMref(z)**2);
+  const mDS=Math.round(1.65*sDS(12)), mPBS=Math.round(1.65*sPBS(12));
+  const Fds=elargie(F,mDS,0.2), Fpbs=elargie(F,mPBS,0.2);
+  let Mmax=0; XG.forEach(x=>{const t=Fds(x); if(t) Mmax=Math.max(Mmax,t.zd-t.zp);}); Mmax=Math.max(0.5,Math.ceil(Mmax*2)/2);
+  const TDS=gabarit(Mmax);
+  const ds=XG.map(x=>{const t=Fds(x); return t?colonne(TDS,ZREF-t.zd):ZG.map(()=>0);});
+  const pbs=XG.map(x=>{const t=Fpbs(x); if(!t) return ZG.map(()=>0); const M=Math.max(0.5,Math.ceil((t.zd-t.zp)*2)/2); return colonne(gabarit(M),ZREF-t.zd);});
+  const Dds=flou(ds,sDS), Dpbs=flou(pbs,sPBS);
+  return {F,Fds,Mmax,mDS,mPBS,Dds,Dpbs,bDS:bilan(Dds,F),bPBS:bilan(Dpbs,F)};
+}
+
+/* ---- détecteurs (level 6) ---- */
+const REF=calcul('p',150,0.005);
+const KB={ic:0,zebra:0,lynx:0.006,film:0.003};
+const Seff=z=>{ const u=Math.max(REF.R0-z,0.2), w=Math.pow(u/A,1/P); return Math.pow(w,1-P)/(P*A); };
+const lecture=(k,z)=>{ const i=Math.min(N-1,Math.max(0,Math.floor(z/DZ))); const q=1/(1+KB[k]*Seff(z)), q0=1/(1+KB[k]*Seff(0)); return REF.D[i]*q/q0; };
+const SIG=3.5, DEC=2;
+const prof=x=>Math.exp(-0.5*((x-DEC)/SIG)**2);
+function echant(pas,diam){ const pts=[]; for(let x=-30;x<=30+1e-9;x+=pas){ let a=0,n=0; for(let u=-diam/2;u<=diam/2+1e-9;u+=Math.max(0.1,diam/10)){ a+=prof(x+u); n++; } pts.push([x,a/n]); } return pts; }
+function sigmaMoments(pts){ let s=0,m=0,m2=0; pts.forEach(([x,v])=>{ s+=v; m+=v*x; m2+=v*x*x; }); m/=s; return Math.sqrt(Math.max(0,m2/s-m*m)); }
+const NOMS={ic:'Grande chambre plate (StingRay)',zebra:'Zebra (180 chambres, pas de 2 mm)',lynx:'Scintillateur (Lynx PT)',film:'Film'};
+
+/* ---- courbes de survie (level 7) ---- */
+const BX=0.05;
+function paramRad(k,ab,L){ const ax=ab*BX;
+  if(k==='pp'||k==='pf'){ const LL=k==='pp'?1:L, mx=0.99064+0.35605/ab*LL, mn=1.1012-0.0038703*Math.sqrt(ab)*LL; return {a:ax*mx,b:BX*mn*mn,oer:k==='pp'?2.8:2.6}; }
+  return {a:ax*(1+16/ab),b:BX,oer:1.7}; }
+const doseSurv=(a,b,lnS)=>{const y=-lnS; return b>1e-9?(-a+Math.sqrt(a*a+4*b*y))/(2*b):y/a;};
+
+function letd(S){ const zs=[]; for(let z=0;z<=19.0001;z+=0.05) zs.push(z);
+  const num=new Float64Array(zs.length), den=new Float64Array(zs.length);
+  const a=1/P-1, k=1/(P*Math.pow(A,1/P))/10;
+  const I1=(u1,u2)=>k*(Math.pow(u2,a+1)-Math.pow(u1,a+1))/(a+1), I2=(u1,u2)=>k*k*(Math.pow(u2,2*a+1)-Math.pow(u1,2*a+1))/(2*a+1);
+  S.pics.forEach((pk,j)=>{ const R=S.L[j]+OFFS.p, sg=Math.sqrt((0.012*Math.pow(R,0.935))**2+(P*R*0.005)**2), nb=80, h=8*sg/nb;
+    zs.forEach((z,kz)=>{ let s1=0,s2=0;
+      for(let q=0;q<nb;q++){ const r1=R-4*sg+q*h, r2=r1+h; if(r2<=z) continue; const gq=Math.exp(-0.5*((r1+h/2-R)/sg)**2), u1=Math.max(0,r1-z), u2=r2-z; s1+=gq*I1(u1,u2); s2+=gq*I2(u1,u2); }
+      if(s1>0){ const d=S.w[j]*pk.raw[Math.min(N-1,Math.round(z/DZ))]; num[kz]+=d*s2/s1; den[kz]+=d; } }); });
+  return {zs,L:zs.map((_,k)=>den[k]>0?num[k]/den[k]:0)}; }
+
+/* ---- incertitude de parcours et marges (level 8) ---- */
+const CTV=[10,14], OAR=[14.5,16.5], ZM=20;
+const TISSUS=[{a:0,b:1,nom:'tissu',spr:1.04},{a:1,b:2.5,nom:'os',spr:1.5},{a:2.5,b:20,nom:'tissu',spr:1.04}];
+const IMPL={a:3,b:7,plan:1.08,reel:0.94};
+const cacheS=new Map();
+function wet(z,impl,mode,fac,implPlan){ let w=0; const pas=0.01;
+  for(let x=0;x<z-1e-9;x+=pas){ const xm=x+pas/2; let spr=TISSUS.find(t=>xm>=t.a&&xm<t.b).spr; if(impl&&xm>=IMPL.a&&xm<IMPL.b) spr=mode==='reel'?IMPL.reel:(implPlan!=null?implPlan:IMPL.plan); w+=spr*fac*Math.min(pas,z-x); }
+  return w; }
+const ZS=[]; for(let z=0;z<=ZM+1e-9;z+=0.05) ZS.push(+z.toFixed(2));
+function scenario(eps,mmm,impl,u,implPlan){
+  const m=mmm/10, Wp=ZS.map(z=>wet(z,impl,'plan',1,implPlan)), Wr=ZS.map(z=>wet(z,impl,'reel',1+eps));
+  const a=wet(CTV[0]-m,impl,'plan',1,implPlan), b=wet(CTV[1]+m,impl,'plan',1,implPlan), key=a.toFixed(2)+'-'+b.toFixed(2);
+  if(!cacheS.has(key)) cacheS.set(key,sobp(a,b,4,'opt').tot);
+  const T=cacheS.get(key), Dw=w=>{ const i=Math.round(w/DZ); return i<N?T[i]:0; };
+  const Dplan=Wp.map(Dw), Dreel=Wr.map(Dw);
+  let bmin=null,bmax=null;
+  if(u>0){ const W1=ZS.map(z=>wet(z,impl,'plan',1-u,implPlan)).map(Dw), W2=ZS.map(z=>wet(z,impl,'plan',1+u,implPlan)).map(Dw); bmin=W1.map((v,k)=>Math.min(v,W2[k],Dplan[k])); bmax=W1.map((v,k)=>Math.max(v,W2[k],Dplan[k])); }
+  const dans=(f,ab,op)=>{ let n=0,t=0,mx=0,mn=1e9; ZS.forEach((z,k)=>{ if(z>=ab[0]&&z<=ab[1]){ t++; if(f[k]>=95) n++; mx=Math.max(mx,f[k]); mn=Math.min(mn,f[k]); } }); return op==='cov'?100*n/t:op==='min'?mn:mx; };
+  const r80=f=>{ for(let k=ZS.length-1;k>0;k--) if(f[k-1]>=80) return ZS[k]; return NaN; };
+  return {Dplan,Dreel,bmin,bmax,cov:dans(Dreel,CTV,'cov'),min:dans(Dreel,CTV,'min'),oar:dans(Dreel,OAR,'max'),oarPlan:dans(Dplan,OAR,'max'),
+    covW:bmin?dans(bmin,CTV,'cov'):null,oarW:bmax?dans(bmax,OAR,'max'):null,shift:(r80(Dreel)-r80(Dplan))*10,regle:0.035*wet(CTV[1],impl,'plan',1,implPlan)*10+1};
+}
+
+/* EBR variable (McNamara) le long d'un SOBP de 10 à 15 cm, OAR juste derrière (level 7) */
+const ZP7=10, ZD7=15, OAR7=[15.2,17]; let baseEBR=null;
+function ebrProfil(ab,dRx){ const ZP=ZP7, ZD=ZD7, OAR=OAR7;
+  if(!baseEBR){ const S=sobp(ZP,ZD,4,'opt'); baseEBR={S,LT:letd(S)}; }
+  const dphys=dRx/1.1, {S,LT}=baseEBR, zs=LT.zs;
+  const Dp=zs.map(z=>S.tot[Math.min(N-1,Math.round(z/DZ))]/100*dphys);
+  const R=zs.map((z,k)=>Dp[k]>0.005?rbeMcN(Dp[k],LT.L[k],ab):NaN), Db=Dp.map((d,k)=>isNaN(R[k])?0:d*R[k]);
+  const moy=(f,a,b)=>{let s=0,n=0; zs.forEach((z,k)=>{if(z>=a&&z<=b&&!isNaN(f[k])){s+=f[k];n++;}}); return s/n;};
+  const mx=(f,a,b)=>{let m=0; zs.forEach((z,k)=>{if(z>=a&&z<=b&&f[k]>m) m=f[k];}); return m;};
+  const r80=f=>{ const ref=0.8*moy(f,ZP+0.5,ZD-0.5); for(let k=zs.length-1;k>0;k--) if(zs[k]>ZP&&f[k-1]>=ref) return zs[k]; return NaN; };
+  return {zs,Dp,Db,R,L:LT.L,dRx,ab,rbeEnt:moy(R,0.5,2),rbeMil:moy(R,ZP,ZP+2.5),rbeFin:moy(R,ZD-0.5,ZD),oar11:1.1*mx(Dp,OAR[0],OAR[1]),oarV:mx(Db,OAR[0],OAR[1]),dR80:(r80(Db)-r80(Dp.map(d=>d*1.1)))*10};
+}
+function contourForme(F){ const b=[]; for(let x=-40;x<=40;x+=2){ const t=F(x); if(t) b.push([x,t]); } return b.map(([x,t])=>[+t.zd.toFixed(2),x]).concat(b.slice().reverse().map(([x,t])=>[+t.zp.toFixed(2),x])); }
+/* ---- simulations jouables sur le téléphone ---- */
+const SIMS={
+  dipole:{
+    ctrl:[{k:'ion',t:'seg',nom:'Particule',v:['p','He','C'],lab:['p','⁴He²⁺','¹²C⁶⁺']},{k:'E',t:'range',nom:'Énergie',min:50,max:430,pas:1,u:'MeV/u'},{k:'B',t:'range',nom:'Champ du dipôle',min:0.3,max:6,pas:0.01,u:'T'}],
+    init:{ion:'p',E:150,B:1},
+    mesure(v){ const br=brho(v.ion,v.E), T=trajectoire(br/v.B); return {br,T,dans:!T.perdu&&Math.abs(T.off)<=OUV}; },
+    juste(v,cfg){ return v.ion===cfg.ion&&Math.abs(v.E-cfg.E)<=(cfg.tolE||2)&&this.mesure(v).dans; },
+    resume:v=>({p:'p',He:'⁴He',C:'¹²C'})[v.ion]+' '+v.E+', '+fr(v.B,2)+' T',
+    statut(v){ const m=this.mesure(v); return m.T.perdu?{txt:'Le faisceau tourne trop : perdu dans l\'aimant'}:m.dans?{txt:'✓ Le faisceau entre dans le tube',ok:true}:{txt:'Écart à l\'entrée du tube : '+fr(m.T.off*100,0)+' cm'}; },
+    dessin(ctx,W,H,v){ const m=this.mesure(v), s0=Math.sin(TH0), c0=Math.cos(TH0);
+      const xm=-0.55, xM=1.95, ym=-0.25, yM=1.75, sc=Math.min((W-10)/(xM-xm),(H-10)/(yM-ym)), ox=(W-(xM-xm)*sc)/2, oy=H-(H-(yM-ym)*sc)/2, X=x=>ox+(x-xm)*sc, Y=y=>oy-(y-ym)*sc;
+      ctx.fillStyle=css('--grille'); ctx.beginPath(); const r1=RHO0-0.18, r2=RHO0+0.18;
+      for(let a=0;a<=TH0+1e-9;a+=TH0/40) ctx.lineTo(X(r2*Math.sin(a)),Y(RHO0-r2*Math.cos(a)));
+      for(let a=TH0;a>=-1e-9;a-=TH0/40) ctx.lineTo(X(r1*Math.sin(a)),Y(RHO0-r1*Math.cos(a)));
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=css('--texte-2'); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(X(-0.5),Y(OUV)); ctx.lineTo(X(0),Y(OUV)); ctx.moveTo(X(-0.5),Y(-OUV)); ctx.lineTo(X(0),Y(-OUV)); ctx.stroke();
+      const ex=[RHO0*s0,RHO0*(1-c0)], t0=[-s0,c0], fin=[ex[0]+(LDR+0.3)*c0,ex[1]+(LDR+0.3)*s0], deb=[ex[0]+0.6*c0,ex[1]+0.6*s0];
+      ctx.strokeStyle=m.dans?css('--juste'):css('--texte-2'); ctx.lineWidth=3; ctx.beginPath(); [1,-1].forEach(sg=>{ ctx.moveTo(X(deb[0]+sg*OUV*t0[0]),Y(deb[1]+sg*OUV*t0[1])); ctx.lineTo(X(fin[0]+sg*OUV*t0[0]),Y(fin[1]+sg*OUV*t0[1])); }); ctx.stroke();
+      etiquette(ctx,'tube',X(fin[0])-4,Y(fin[1])+12,css('--texte-2'),12,'right');
+      trait(ctx,m.T.pts.map(([x,y])=>[X(x),Y(y)]),m.dans?css('--juste'):css('--dose'),3);
+      etiquette(ctx,'Bρ = '+fr(m.br,2)+' T·m · ρ = '+fr(m.br/v.B,2)+' m',6,10,css('--texte-2'),12,'left'); }
+  },
+  bragg:{
+    ctrl:[{k:'ion',t:'seg',nom:'Particule',v:['p','He','C'],lab:['p','⁴He','¹²C']},{k:'E',t:'range',nom:'Énergie',min:50,max:430,pas:1,u:'MeV/u'}],
+    init:{ion:'p',E:100},
+    mesure(v,cfg){ const c=calcul(v.ion,v.E,v.ion==='p'?0.005:0.001), hors=!(c.R0<ZMAX-1&&c.R80>0); return {c,hors,r80:hors?Infinity:(cfg.os?zDeOs(c.R80):c.R80)}; },
+    juste(v,cfg){ const m=this.mesure(v,cfg); return v.ion===cfg.ion&&Math.abs(m.r80-cfg.cible[1])<=(cfg.tol||0.25); },
+    resume:v=>({p:'p',He:'⁴He',C:'¹²C'})[v.ion]+' '+v.E,
+    statut(v,cfg){ const m=this.mesure(v,cfg); if(m.hors) return {txt:'Pic au-delà de '+(ZMAX-1)+' cm : énergie trop forte'};
+      const ok=Math.abs(m.r80-cfg.cible[1])<=(cfg.tol||0.25); return {txt:(ok?'✓ ':'')+'Fin du pic (R80) à '+fr(m.r80,1)+' cm · bord de la tumeur : '+fr(cfg.cible[1],1)+' cm',ok}; },
+    dessin(ctx,W,H,v,cfg){ const m=this.mesure(v,cfg), fs=11, zmax=30, g={x:30,y:8,w:W-38,h:H-40}, X=z=>g.x+z/zmax*g.w, Y=d=>g.y+g.h-d/110*g.h;
+      ctx.fillStyle='#EF476F'; ctx.globalAlpha=.18; ctx.fillRect(X(cfg.cible[0]),g.y,X(cfg.cible[1])-X(cfg.cible[0]),g.h); ctx.globalAlpha=1;
+      if(cfg.os){ ctx.fillStyle='#D8CFC0'; ctx.globalAlpha=.8; ctx.fillRect(X(OS4.a),g.y,X(OS4.b)-X(OS4.a),g.h); ctx.globalAlpha=1; etiquette(ctx,'os',X(4),g.y+8,'#6B5B45',fs,'center'); }
+      etiquette(ctx,'tumeur',X((cfg.cible[0]+cfg.cible[1])/2),g.y+8,'#C0392B',fs,'center');
+      axes(ctx,g,fs,[0,5,10,15,20,25,30].map(z=>[z,X(z),z]),[0,50,100].map(d=>[d,Y(d),d]),'Profondeur (cm)','');
+      ctx.save(); ctx.beginPath(); ctx.rect(g.x,g.y,g.w,g.h); ctx.clip();
+      const pts=[]; for(let z=0;z<=zmax;z+=0.05){ const w=cfg.os?wetDeOs(z):z, i=Math.min(N-1,Math.floor(w/DZ)); pts.push([X(z),Y(m.c.D[i])]); } trait(ctx,pts,css('--dose'),3);
+      if(!m.hors){ ctx.strokeStyle=css('--choix'); ctx.setLineDash([4,3]); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(X(m.r80),g.y); ctx.lineTo(X(m.r80),g.y+g.h); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.restore(); }
+  },
+  spots:{
+    ctrl:[{k:'esp',t:'range',nom:'Espacement des spots',min:2,max:16,pas:0.2,u:'mm'}],
+    init:{esp:3},
+    mesure(v,cfg){ const L=lateral(cfg.sig,v.esp); return {L,n:L.pos.length}; },
+    juste(v,cfg){ const m=this.mesure(v,cfg); return m.L.ond<=cfg.ond&&m.n<=cfg.nmax; },
+    resume:v=>fr(v.esp,1)+' mm',
+    statut(v,cfg){ const m=this.mesure(v,cfg), ok=m.L.ond<=cfg.ond; return {txt:(ok?'✓ ':'✗ ')+'ondulation ± '+fr(m.L.ond,1)+' % · '+m.n+' spots',ok:ok&&m.n<=cfg.nmax}; },
+    dessin(ctx,W,H,v,cfg){ const m=this.mesure(v,cfg), L=m.L, g={x:8,y:8,w:W-16,h:H-26}, X=x=>g.x+(x+45)/90*g.w, Y=d=>g.y+g.h-Math.min(d,130)/130*g.h;
+      ctx.fillStyle=css('--grille'); ctx.globalAlpha=.6; ctx.fillRect(X(-30),g.y,X(30)-X(-30),g.h); ctx.globalAlpha=1;
+      etiquette(ctx,'champ à couvrir (6 cm)',X(0),H-8,css('--texte-2'),11,'center');
+      ctx.globalAlpha=.5; L.pos.forEach(c=>{ const pts=[]; for(let x=c-4*L.sig;x<=c+4*L.sig;x+=0.25) pts.push([X(x),Y(100*Math.exp(-0.5*(x-c)*(x-c)/(L.sig*L.sig))/L.moy)]); trait(ctx,pts,css('--S'),1); }); ctx.globalAlpha=1;
+      trait(ctx,[[X(-45),Y(100)],[X(45),Y(100)]],css('--texte-2'),1,[3,3]);
+      trait(ctx,L.xs.map((x,i)=>[X(x),Y(L.y[i])]),m.L.ond<=cfg.ond?css('--juste'):css('--dose'),2.5); }
+  },
+  /* L3 : dégradeur + fentes */
+  ess:{
+    ctrl:[{k:'E',t:'range',nom:'Énergie après le dégradeur',min:70,max:230,pas:1,u:'MeV'},{k:'d',t:'range',nom:'Ouverture des fentes (±)',min:0.2,max:3,pas:0.1,u:'%'}],
+    init:{E:180,d:2},
+    mesure(v){ return ess(v.E,v.d/100); },
+    juste(v,cfg){ const s=this.mesure(v); if(cfg.but==='disp') return Math.abs(v.E-cfg.E)<=1&&100*s.relOut<=cfg.disp+1e-9&&100*s.T>=cfg.Tmin;
+      return Math.abs(v.d-cfg.d)<0.05&&100*s.T>=cfg.Tmin&&v.E<=cfg.Emax; },
+    statut(v,cfg){ const s=this.mesure(v); return {txt:v.E+' MeV · σE/E après fentes '+fr(100*s.relOut,2)+' % · transmission '+fr(100*s.T,0)+' %',ok:this.juste(v,cfg)}; },
+    resume:v=>v.E+' MeV, fentes ±'+fr(v.d,1)+' %',
+    dessin(ctx,W,H,v){ const s=this.mesure(v), d=v.d/100, g={x:8,y:20,w:W-16,h:H-44}, span=0.08, X=f=>g.x+(f/span+1)/2*g.w, Y=y=>g.y+g.h-y/1.1*g.h;
+      ctx.fillStyle=css('--phi'); ctx.globalAlpha=.15; ctx.fillRect(X(-d),g.y,X(d)-X(-d),g.h); ctx.globalAlpha=1;
+      const p1=[],p2=[]; for(let k=0;k<=300;k++){ const f=-span+2*span*k/300, y=Math.exp(-0.5*(f/s.rel)**2); p1.push([X(f),Y(y)]); p2.push([X(f),Math.abs(f)<=d?Y(y):Y(0)]); }
+      trait(ctx,p1,css('--ghost'),2); trait(ctx,p2,css('--dose'),3);
+      ctx.fillStyle=css('--texte'); ctx.fillRect(X(-d)-2,g.y,3,g.h*0.25); ctx.fillRect(X(d)-1,g.y,3,g.h*0.25);
+      etiquette(ctx,'gris : après le dégradeur · orange : après les fentes',8,9,css('--texte-2'),11,'left');
+      [-8,-4,0,4,8].forEach(t=>etiquette(ctx,(t>0?'+':'')+t+' %',X(t/100),H-10,css('--texte-2'),11,'center')); }
+  },
+  /* L6 : rendement en profondeur selon le détecteur */
+  detecteur:{
+    ctrl:[{k:'det',t:'seg',nom:'Détecteur',v:['ic','zebra','lynx','film'],lab:['StingRay','Zebra','Lynx','Film']}],
+    init:{det:'lynx'},
+    juste:(v)=>v.det==='ic',
+    statut(v){ const ipk=Math.round(REF.zpic/DZ), sous=100*(1-lecture(v.det,REF.zpic)/REF.D[ipk]);
+      return {txt:{ic:'Lecture au pic ≈ dose réelle · chambre plate de 12 cm',zebra:'Lecture ≈ dose, mais un point tous les 2 mm (CQ rapide)',lynx:'Lecture au pic : −'+fr(sous,0)+' % (quenching)',film:'Lecture au pic : −'+fr(sous,0)+' %'}[v.det]}; },
+    resume:v=>({ic:'StingRay',zebra:'Zebra',lynx:'Lynx',film:'Film'})[v.det],
+    dessin(ctx,W,H,v){ const g={x:30,y:8,w:W-38,h:H-40}, zmax=18, X=z=>g.x+z/zmax*g.w, Y=d=>g.y+g.h-d/110*g.h;
+      axes(ctx,g,11,[0,3,6,9,12,15,18].map(z=>[z,X(z),z]),[0,50,100].map(d=>[d,Y(d),d]),'Profondeur (cm)','');
+      const vrai=[]; for(let z=0;z<=zmax;z+=0.05) vrai.push([X(z),Y(REF.D[Math.min(N-1,Math.floor(z/DZ))])]); trait(ctx,vrai,css('--ghost'),4);
+      if(v.det==='zebra'){ for(let z=0.2;z<=zmax;z+=0.2) rond(ctx,X(z),Y(lecture('ic',z)),2.5,css('--dose')); }
+      else { const L=[]; for(let z=0;z<=zmax;z+=0.05) L.push([X(z),Y(lecture(v.det,z))]); trait(ctx,L,css('--dose'),2.5); }
+      etiquette(ctx,'gris : dose réelle · orange : lecture',g.x+4,g.y+8,css('--texte-2'),11,'left'); }
+  },
+  /* L6 : calorimètre */
+  calo:{
+    ctrl:[{k:'mil',t:'seg',nom:'Milieu',v:['eau','gr'],lab:['Eau','Graphite']},{k:'D',t:'range',nom:'Dose délivrée',min:0,max:10,pas:0.1,u:'Gy'}],
+    init:{mil:'gr',D:1},
+    dT:v=>v.D/(v.mil==='eau'?4180:710)*1000, /* mK */
+    juste(v,cfg){ return v.mil===cfg.mil&&Math.abs(this.dT(v)-cfg.dT)<=0.03; },
+    statut(v,cfg){ return {txt:'Élévation de température : '+fr(this.dT(v),3)+' mK',ok:this.juste(v,cfg)}; },
+    resume:v=>(v.mil==='eau'?'eau':'graphite')+', '+fr(v.D,1)+' Gy',
+    dessin(ctx,W,H,v){ const t=this.dT(v), x=W*0.7, h=H-40, y0=H-20, Y=m=>y0-Math.min(m,15)/15*h;
+      ctx.strokeStyle=css('--texte-2'); ctx.lineWidth=2; ctx.strokeRect(x-14,y0-h,28,h);
+      ctx.fillStyle=css('--S'); ctx.fillRect(x-12,Y(t),24,y0-Y(t)); rond(ctx,x,y0+6,14,css('--S'));
+      [0,1,5,10,15].forEach(m=>{ ctx.fillStyle=css('--texte-2'); ctx.fillRect(x+14,Y(m),8,1.5); etiquette(ctx,m+' mK',x+26,Y(m),css('--texte-2'),11,'left'); });
+      etiquette(ctx,'ΔT = '+fr(t,3)+' mK',12,16,css('--texte'),15,'left'); etiquette(ctx,'(1 mK = un millième de degré)',12,34,css('--texte-2'),11,'left'); }
+  },
+  /* L6 : taille d'un spot selon le détecteur */
+  spotdet:{
+    ctrl:[{k:'lat',t:'seg',nom:'Détecteur',v:['lynx','matrixx'],lab:['Lynx PT (0,5 mm)','MatriXX (7,6 mm)']}],
+    init:{lat:'matrixx'},
+    sigma:v=>sigmaMoments(v.lat==='lynx'?echant(0.5,0):echant(7.6,4.5)),
+    juste(v){ return Math.abs(this.sigma(v)-SIG)<=0.1; },
+    statut(v){ const s=this.sigma(v); return {txt:'σ mesuré '+fr(s,2)+' mm (σ réel '+fr(SIG,1)+' mm)',ok:Math.abs(s-SIG)<=0.1}; },
+    resume:v=>v.lat==='lynx'?'Lynx':'MatriXX',
+    dessin(ctx,W,H,v){ const pts=v.lat==='lynx'?echant(0.5,0):echant(7.6,4.5), g={x:30,y:8,w:W-38,h:H-40}, X=x=>g.x+(x+25)/50*g.w, Y=y=>g.y+g.h-y/1.15*g.h;
+      axes(ctx,g,11,[-20,-10,0,10,20].map(x=>[x,X(x),x]),[0,0.5,1].map(y=>[y,Y(y),fr(y,1)]),'Position (mm)','');
+      const vrai=[]; for(let x=-25;x<=25;x+=0.2) vrai.push([X(x),Y(prof(x))]); trait(ctx,vrai,css('--ghost'),3);
+      pts.filter(([x])=>x>=-25&&x<=25).forEach(([x,y])=>rond(ctx,X(x),Y(y),v.lat==='lynx'?1.8:5,css('--dose'))); }
+  },
+  /* L7 : courbes de survie, photons et carbone */
+  survie:{
+    ctrl:[{k:'Dx',t:'range',nom:'Dose de photons',min:0,max:20,pas:0.05,u:'Gy'},{k:'Di',t:'range',nom:'Dose de carbone',min:0,max:20,pas:0.05,u:'Gy'}],
+    init:{Dx:2,Di:2},
+    S(v,cfg){ const ab=cfg.ab||3, X={a:ab*BX,b:BX,oer:2.8}, R=paramRad('c',ab,0), f=(p,D)=>{ const d=cfg.hyp?D/p.oer:D; return -(p.a*d+p.b*d*d)/Math.LN10; }; return {x:f(X,v.Dx),i:f(R,v.Di)}; },
+    juste(v,cfg){ const s=this.S(v,cfg); return Math.abs(s.x-cfg.niv)<=0.03&&Math.abs(s.i-cfg.niv)<=0.03; },
+    statut(v,cfg){ const s=this.S(v,cfg), p=l=>{ const x=100*Math.pow(10,l); return fr(x,x<1?2:x<10?1:0)+' %'; };
+      return {txt:'Survie : photons '+p(s.x)+' · carbone '+p(s.i)+(v.Di>0?' · rapport des doses '+fr(v.Dx/v.Di,2):''),ok:this.juste(v,cfg)}; },
+    resume:v=>fr(v.Dx,2)+' / '+fr(v.Di,2)+' Gy',
+    dessin(ctx,W,H,v,cfg){ const ab=cfg.ab||3, X0={a:ab*BX,b:BX,oer:2.8}, R=paramRad('c',ab,0), dmax=cfg.hyp?20:12, g={x:34,y:8,w:W-42,h:H-40}, X=d=>g.x+d/dmax*g.w, Y=l=>g.y+(-l)/3.2*g.h;
+      axes(ctx,g,11,[0,dmax/4,dmax/2,3*dmax/4,dmax].map(d=>[d,X(d),d]),[0,-1,-2,-3].map(l=>[l,Y(l),['1','0,1','0,01','0,001'][-l]]),'Dose (Gy)','');
+      ctx.save(); ctx.beginPath(); ctx.rect(g.x,g.y,g.w,g.h); ctx.clip();
+      const cb=(p,col)=>{ const pts=[]; for(let k=0;k<=200;k++){ const D=dmax*k/200, d=cfg.hyp?D/p.oer:D; pts.push([X(D),Y(Math.max(-3.3,-(p.a*d+p.b*d*d)/Math.LN10))]); } trait(ctx,pts,col,2.5); };
+      cb(X0,css('--ghost')); cb(R,css('--dose'));
+      trait(ctx,[[g.x,Y(cfg.niv)],[g.x+g.w,Y(cfg.niv)]],css('--texte-2'),1,[3,3]);
+      const s=this.S(v,cfg); rond(ctx,X(v.Dx),Y(Math.max(-3.2,s.x)),5,css('--ghost')); rond(ctx,X(v.Di),Y(Math.max(-3.2,s.i)),5,css('--dose')); ctx.restore();
+      etiquette(ctx,'gris : photons · orange : carbone'+(cfg.hyp?' (hypoxiques)':''),g.x+4,g.y+g.h-8,css('--texte-2'),11,'left'); }
+  },
+  /* L7 : EBR variable le long du SOBP */
+  ebrsobp:{
+    ctrl:[{k:'ab',t:'range',nom:'α/β du tissu',min:1,max:12,pas:0.5,u:'Gy'},{k:'d',t:'range',nom:'Dose par fraction',min:1,max:8,pas:0.2,u:'Gy'}],
+    init:{ab:6,d:3},
+    juste(v,cfg){ const r=ebrProfil(v.ab,v.d); return cfg.but==='haut'?r.rbeFin>=cfg.seuil:(Math.abs(v.ab-cfg.ab)<0.01&&r.rbeFin<cfg.seuil&&v.d<=cfg.dmax); },
+    statut(v,cfg){ const r=ebrProfil(v.ab,v.d); return {txt:'EBR en fin de SOBP : '+fr(r.rbeFin,2)+' · à l\'entrée : '+fr(r.rbeEnt,2),ok:this.juste(v,cfg)}; },
+    resume:v=>'α/β '+fr(v.ab,1)+', '+fr(v.d,1)+' Gy',
+    dessin(ctx,W,H,v){ const r=ebrProfil(v.ab,v.d), g={x:30,y:8,w:W-38,h:H-40}, zmax=19, X=z=>g.x+z/zmax*g.w, Y=e=>g.y+g.h-(e-0.9)/(2-0.9)*g.h, dm=Math.max(...r.Dp);
+      ctx.fillStyle=css('--grille'); ctx.globalAlpha=.6; ctx.fillRect(X(ZP7),g.y,X(ZD7)-X(ZP7),g.h); ctx.globalAlpha=1;
+      axes(ctx,g,11,[0,5,10,15].map(z=>[z,X(z),z]),[1,1.5,2].map(e=>[e,Y(e),fr(e,1)]),'Profondeur (cm)','');
+      ctx.save(); ctx.beginPath(); ctx.rect(g.x,g.y,g.w,g.h); ctx.clip();
+      trait(ctx,[[g.x,Y(1.1)],[g.x+g.w,Y(1.1)]],css('--texte-2'),1,[3,3]);
+      trait(ctx,r.zs.map((z,k)=>[X(z),!isNaN(r.R[k])&&r.Dp[k]>=0.1*dm?Y(r.R[k]):NaN]),css('--dose'),3); ctx.restore();
+      etiquette(ctx,'EBR (pointillés : 1,1) · gris : SOBP',g.x+4,g.y+8,css('--texte-2'),11,'left'); }
+  },
+  /* L8 : marges de parcours */
+  marge:{
+    ctrl:[{k:'eps',t:'range',nom:'Erreur réelle sur les SPR',min:-5,max:5,pas:0.5,u:'%'},{k:'m',t:'range',nom:'Marge en profondeur',min:0,max:10,pas:0.5,u:'mm'}],
+    init:{eps:0,m:0},
+    sc(v,cfg){ return cfg.mode==='robuste'?scenario(0,v.m,false,0.035):cfg.mode==='implant'?scenario(0,v.m,true,0,v.ct==='dect'?IMPL.reel:IMPL.plan):scenario(v.eps/100,v.m,false,0); },
+    juste(v,cfg){ const s=this.sc(v,cfg); if(cfg.mode==='robuste') return s.covW>=99.5&&v.m<=cfg.mmax; if(cfg.mode==='implant') return s.cov>=98&&s.oar<=50;
+      return Math.abs(v.eps-cfg.eps)<0.01&&s.cov>=99.5&&v.m<=cfg.mmax; },
+    statut(v,cfg){ const s=this.sc(v,cfg); return {txt:cfg.mode==='robuste'?'Pire cas ± 3,5 % : cible couverte à '+fr(s.covW,0)+' % · OAR '+fr(s.oarW,0)+' %':'Cible couverte à '+fr(s.cov,0)+' % · dose max à l\'OAR '+fr(s.oar,0)+' %',ok:this.juste(v,cfg)}; },
+    resume:v=>(v.ct?(v.ct==='dect'?'DECT':'SECT')+', ':v.eps!=null&&v.eps!==0?frs(v.eps,1)+' %, ':'')+fr(v.m,1)+' mm',
+    dessin(ctx,W,H,v,cfg){ const s=this.sc(v,cfg), g={x:30,y:8,w:W-38,h:H-40}, X=z=>g.x+z/ZM*g.w, Y=d=>g.y+g.h-Math.min(d,125)/125*g.h;
+      ctx.fillStyle='#EF476F'; ctx.globalAlpha=.16; ctx.fillRect(X(CTV[0]),g.y,X(CTV[1])-X(CTV[0]),g.h); ctx.fillStyle='#7b2cbf'; ctx.fillRect(X(OAR[0]),g.y,X(OAR[1])-X(OAR[0]),g.h); ctx.globalAlpha=1;
+      if(cfg.mode==='implant'){ ctx.fillStyle='#8ecae6'; ctx.globalAlpha=.5; ctx.fillRect(X(IMPL.a),g.y,X(IMPL.b)-X(IMPL.a),g.h); ctx.globalAlpha=1; etiquette(ctx,'implant',X(5),g.y+8,css('--texte-2'),11,'center'); }
+      etiquette(ctx,'cible',X(12),g.y+8,'#C0392B',11,'center'); etiquette(ctx,'OAR',X(15.5),g.y+8,'#7b2cbf',11,'center');
+      axes(ctx,g,11,[0,5,10,15,20].map(z=>[z,X(z),z]),[0,50,100].map(d=>[d,Y(d),d]),'','');
+      ctx.save(); ctx.beginPath(); ctx.rect(g.x,g.y,g.w,g.h); ctx.clip();
+      if(s.bmin){ ctx.fillStyle=css('--dose'); ctx.globalAlpha=.2; ctx.beginPath(); ZS.forEach((z,k)=>k?ctx.lineTo(X(z),Y(s.bmax[k])):ctx.moveTo(X(z),Y(s.bmax[k]))); for(let k=ZS.length-1;k>=0;k--) ctx.lineTo(X(ZS[k]),Y(s.bmin[k])); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1; }
+      trait(ctx,ZS.map((z,k)=>[X(z),Y(s.Dplan[k])]),css('--texte-2'),1.5,[5,3]); if(cfg.mode!=='robuste') trait(ctx,ZS.map((z,k)=>[X(z),Y(s.Dreel[k])]),css('--dose'),3);
+      ctx.restore(); etiquette(ctx,cfg.mode==='robuste'?'tirets : prévu · bande : erreurs de −3,5 à +3,5 %':'tirets : prévu par le TPS · orange : délivré',g.x,H-6,css('--texte-2'),11,'left'); }
+  },
+  /* L5 : double diffusion ou balayage, carte de dose 2D */
+  dspbs:{
+    ctrl:[{k:'tech',t:'seg',nom:'Technique',v:['ds','pbs'],lab:['Double diffusion','Balayage (PBS)']},{k:'sig',t:'range',nom:'σ du spot PBS (dans l\'air)',min:2,max:8,pas:0.5,u:'mm'}],
+    init:{tech:'ds',sig:6},
+    b(v,cfg){ const c=doseCarte(cfg.forme,v.sig); return {c,b:v.tech==='ds'?c.bDS:c.bPBS,D:v.tech==='ds'?c.Dds:c.Dpbs}; },
+    juste(v,cfg){ const r=this.b(v,cfg).b; return r.couv>=cfg.couv&&r.sain<=cfg.sain; },
+    statut(v,cfg){ const r=this.b(v,cfg).b; return {txt:'Cible couverte (≥ 95 %) : '+fr(r.couv,0)+' % · tissu sain surdosé : '+fr(r.sain,1)+' cm²',ok:this.juste(v,cfg)}; },
+    resume:v=>v.tech==='ds'?'DS':'PBS σ '+fr(v.sig,1)+' mm',
+    dessin(ctx,W,H,v,cfg){ const r=this.b(v,cfg), F=r.c.F, z0=-1, z1=18, X=z=>(z-z0)/(z1-z0)*W, Y=x=>H/2-x/42*(H/2), dx=Math.abs(Y(1)-Y(0))+0.6, dz=Math.abs(X(0.1)-X(0))+0.6;
+      ctx.fillStyle='#0d0887'; ctx.fillRect(X(0),0,W-X(0),H);
+      XG.forEach((x,ix)=>{ const t=F(x); ZG.forEach((z,iz)=>{ const d=r.D[ix][iz]; if(d<1) return; const dedans=t&&z>=t.zp&&z<=t.zd; const k=!dedans&&d>=90?[34,211,238]:couleur(Math.min(1,d/100)); ctx.fillStyle=`rgb(${k[0]},${k[1]},${k[2]})`; ctx.fillRect(X(z)-dz/2,Y(x)-dx/2,dz,dx); }); });
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); contourForme(F).forEach(([z,x],i)=>i?ctx.lineTo(X(z),Y(x)):ctx.moveTo(X(z),Y(x))); ctx.closePath(); ctx.stroke();
+      etiquette(ctx,'cyan : tissu sain ≥ 90 %',X(0)+4,H-8,'#fff',11,'left'); }
+  },
+};
+/* variantes du labo des marges : marge seule (évaluation robuste), scanner + marge (implant) */
+SIMS.margeRob=Object.assign({},SIMS.marge,{ctrl:[SIMS.marge.ctrl[1]],init:{m:0}});
+SIMS.margeImpl=Object.assign({},SIMS.marge,{ctrl:[{k:'ct',t:'seg',nom:'Conversion des SPR',v:['sect','dect'],lab:['Scanner simple énergie','Double énergie (DECT)']},SIMS.marge.ctrl[1]],init:{ct:'sect',m:0}});
+const ctrlsDe=(sim,cfg)=>SIMS[sim].ctrl.map(c=>Object.assign({},c,((cfg||{}).ctrl||{})[c.k]||{}));
+const nPas=k=>k.t==='seg'?k.v.length:Math.round((k.max-k.min)/k.pas)+1;
+function encoderLabo(ctrls,v){ let c=0,m=1; ctrls.forEach(k=>{ const n=nPas(k), i=k.t==='seg'?k.v.indexOf(v[k.k]):Math.round((v[k.k]-k.min)/k.pas); c+=Math.max(0,Math.min(n-1,i))*m; m*=n; }); return c; }
+function decoderLabo(ctrls,c){ const v={}; ctrls.forEach(k=>{ const n=nPas(k), i=c%n; c=Math.floor(c/n); v[k.k]=k.t==='seg'?k.v[i]:+(k.min+i*k.pas).toFixed(4); }); return v; }
+/* correction côté enseignant : juste si l'objectif est atteint, bonus au plus rapide parmi les justes */
+function corrigerLabo(vs,m){ const ctrls=ctrlsDe(m.sim,m.cfg), sim=SIMS[m.sim], ok={}; let best=null;
+  Object.entries(vs).forEach(([id,v])=>{ if(!v||typeof v.c!=='number') return; if(sim.juste(decoderLabo(ctrls,v.c),m.cfg)){ ok[id]=1; if(!best||v.t<vs[best].t) best=id; } });
+  return {ok,best:best||''}; }
+
 /* ===================== Vue étudiant (téléphone = manette) ===================== */
 const FORMES=['A','B','C','D','E','F','G','H','I','J','K','L'];
 function fmtVal(v,et){ if(v==null||!isFinite(v)) return '—';
@@ -650,12 +1008,16 @@ function sliderVers(et,s){ /* s ∈ [0,1000] → valeur */
 function versSlider(et,v){ return et.log?1000*Math.log(v/et.min)/Math.log(et.max/et.min):1000*(v-et.min)/(et.max-et.min); }
 
 function eleveApp(){
-  const Q=new URLSearchParams(location.search), code=(Q.get('s')||'').toUpperCase(), dbu=Q.get('db'), demo=Q.has('demo');
+  const Q=new URLSearchParams(location.search), code=(Q.get('s')||'').toUpperCase().trim(), demo=Q.has('demo'), dbu=Q.get('db')||(demo?null:DB_DEFAUT);
   document.title='Hadronthérapie · manette';
   document.body.className='eleve';
   document.body.innerHTML='<div class="el-tete"><b>Hadronthérapie M2</b><span id="elQui"></span></div><div class="el-corps" id="elCorps"><p class="el-att">Connexion…</p></div><div class="el-pied" id="elPied"></div>';
   const corps=$('elCorps'), pied=$('elPied'), qui=$('elQui');
-  if(!code||(!dbu&&!demo)){ corps.innerHTML='<p class="el-att">Lien incomplet : scannez le QR code affiché en salle.</p>'; return; }
+  if(!code){ /* adresse courte (ordinateur portable) : on demande le code de séance affiché en salle */
+    corps.innerHTML='<h2>Rejoindre la séance</h2><p class="el-note">Saisissez le code affiché à l\'écran.</p><form id="elCode" class="el-code"><input id="elCodeIn" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Code de séance"><button class="el-go" type="submit">Rejoindre</button></form>';
+    const f=$('elCode'), i=$('elCodeIn'); i.focus();
+    f.onsubmit=ev=>{ ev.preventDefault(); const c=i.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); if(c.length<4){ i.focus(); return; } const P=new URLSearchParams(location.search); P.delete('e'); P.set('eleve',''); P.set('s',c); location.search=P.toString().replace('eleve=','eleve'); };
+    return; }
   const DEV=Q.get('dev')||'';
   const KTOK='hadron_tok_'+code+DEV; let tok=null; try{ tok=localStorage.getItem(KTOK); }catch(e){}
   if(!tok){ tok=Math.random().toString(36).slice(2,12); try{ localStorage.setItem(KTOK,tok); }catch(e){} }
@@ -680,8 +1042,10 @@ function eleveApp(){
     if(!Object.keys(S.roster).length){ corps.innerHTML='<p class="el-att">Séance introuvable ou pas encore ouverte.</p>'; return; }
     if(!moi||!S.roster[moi]){ cle='noms'; qui.textContent='';
       const ids=Object.keys(S.roster).sort((a,b)=>S.roster[a].localeCompare(S.roster[b],'fr'));
-      corps.innerHTML='<h2>Qui êtes-vous ?</h2><div class="el-noms">'+ids.map(id=>{ const pris=S.joined[id]&&S.joined[id]!==tok; return `<button data-id="${id}" ${pris?'disabled':''}>${echapper(S.roster[id])}${pris?' ✓':''}</button>`; }).join('')+'</div><p class="el-note">Les prénoms cochés sont déjà pris.</p>';
-      corps.querySelectorAll('.el-noms button').forEach(b=>b.onclick=()=>{ fbRejoindre(B,code,b.dataset.id,tok).then(()=>{ moi=b.dataset.id; try{localStorage.setItem(KID,moi);}catch(e){} qCour=null; suivre(); rendre(); }).catch(()=>alert('Ce prénom vient d\'être pris.')); });
+      corps.innerHTML='<h2>Qui êtes-vous ?</h2><div class="el-noms">'+ids.map(id=>{ const pris=S.joined[id]&&S.joined[id]!==tok; return `<button data-id="${id}" class="${pris?'pris':''}">${echapper(S.roster[id])}${pris?' ✓':''}</button>`; }).join('')+'</div><p class="el-note">✓ = déjà connecté. Si c\'est ton prénom (tu as changé de téléphone ou fermé la page), touche-le quand même pour le reprendre.</p>';
+      corps.querySelectorAll('.el-noms button').forEach(b=>b.onclick=()=>{ const id=b.dataset.id, pris=S.joined[id]&&S.joined[id]!==tok;
+        if(pris&&!confirm('« '+S.roster[id]+' » est déjà connecté sur un autre téléphone.\nC\'est bien toi ? L\'autre téléphone sera déconnecté (tes points sont conservés).')) return;
+        fbRejoindre(B,code,id,tok,pris).then(()=>{ moi=b.dataset.id; try{localStorage.setItem(KID,moi);}catch(e){} qCour=null; suivre(); rendre(); }).catch(()=>alert(pris?'Impossible de reprendre ce prénom : demande à l\'enseignant de le libérer (×).':'Ce prénom vient d\'être pris.')); });
       pied.innerHTML=''; return; }
     qui.innerHTML=echapper(S.roster[moi])+' <button class="el-chg" id="elChg">changer</button>';
     $('elChg').onclick=()=>{ if(confirm('Changer de prénom ?')){ const ancien=moi; moi=null; B.set(base+'joined/'+ancien,null).catch(()=>{}); /* libère le prénom pour son propriétaire */ try{localStorage.removeItem(KID);}catch(e){} rendre(); } };
@@ -694,7 +1058,7 @@ function eleveApp(){
     const clos=!!(e.revele||S.res);
     const tete=`<div class="el-lv">${echapper(e.lv||'')}</div><div class="el-q">${sur(e.texte)}</div>`;
     const chrono=(e.duree&&!clos)?'<div class="el-chrono"><i id="elChr" style="width:100%"></i></div>':'';
-    const T={choix:vueChoix,estim:vueEstim,golf:vueGolf,couches:vueCouches,tap:vueTap}[e.type]||vueChoix;
+    const T={choix:vueChoix,estim:vueEstim,golf:vueGolf,couches:vueCouches,tap:vueTap,labo:vueLabo}[e.type]||vueChoix;
     corps.innerHTML=chrono+tete+'<div id="elZone"></div><div id="elRes"></div>';
     T(e,clos,$('elZone'));
     resultat(e);
@@ -790,6 +1154,35 @@ function eleveApp(){
     $('elS').oninput=maj; $('elM').onclick=()=>{ $('elS').value=+$('elS').value-1; maj(); }; $('elP').onclick=()=>{ $('elS').value=+$('elS').value+1; maj(); }; maj();
     $('elGo').onclick=()=>{ $('elGo').disabled=true; envoyer(k*1000+(+$('elS').value)); };
   }
+  /* --- labo : l'étudiant règle des commandes et voit la simulation en direct --- */
+  function vueLabo(e,clos,z){
+    const sim=SIMS[e.sim]; if(!sim){ z.innerHTML='<p class="el-note">Rechargez la page pour cette manche.</p>'; return; }
+    const cfg=e.cfg||{}, ctrls=ctrlsDe(e.sim,cfg), v=S.vote, KL='hadron_labo_'+code+DEV+'_'+e.q, fige=!!(v||clos);
+    let val=null; if(v) val=decoderLabo(ctrls,v.c); else { try{ val=JSON.parse(localStorage.getItem(KL)); }catch(x){} }
+    val=Object.assign({},sim.init,cfg.init||{},val||{});
+    const idx=k=>k.t==='seg'?Math.max(0,k.v.indexOf(val[k.k])):Math.round((val[k.k]-k.min)/k.pas);
+    z.innerHTML=`<div class="el-cv el-labo"><canvas id="elC"></canvas></div><p class="el-statut" id="elSt"></p>`+ctrls.map(k=>k.t==='seg'
+      ?`<div class="el-ctrl"><div class="el-ctrl-t"><span>${k.nom}</span></div><div class="el-seg">${k.v.map((x,i)=>`<button type="button" data-k="${k.k}" data-i="${i}" ${fige?'disabled':''}>${k.lab[i]}</button>`).join('')}</div></div>`
+      :`<div class="el-ctrl"><div class="el-ctrl-t"><span>${k.nom}</span><b id="elv_${k.k}"></b></div><div class="el-slider"><button type="button" class="el-pm" data-k="${k.k}" data-d="-1" ${fige?'disabled':''}>−</button><input type="range" data-k="${k.k}" min="0" max="${nPas(k)-1}" step="1" value="${idx(k)}" ${fige?'disabled':''}><button type="button" class="el-pm" data-k="${k.k}" data-d="1" ${fige?'disabled':''}>+</button></div></div>`).join('')+
+      (fige?'':'<button class="el-go" id="elGo" type="button">Valider ma réponse</button>');
+    const cv=$('elC');
+    const dessin=()=>{ const P0=prep(cv); if(P0) sim.dessin(P0.c,P0.W,P0.H,val,cfg); };
+    const maj=()=>{ ctrls.forEach(k=>{ if(k.t==='seg') z.querySelectorAll(`.el-seg button[data-k="${k.k}"]`).forEach(b=>b.classList.toggle('actif',+b.dataset.i===idx(k)));
+        else { const o=$('elv_'+k.k); if(o) o.textContent=fr(val[k.k],k.pas<1?(k.pas<0.1?2:1):0)+' '+k.u; const s=z.querySelector(`input[data-k="${k.k}"]`); if(s) s.value=idx(k); } });
+      const st=sim.statut(val,cfg), el=$('elSt'); el.textContent=st.txt; el.className='el-statut'+(st.ok?' ok':''); dessin(); };
+    const regle=(k,i)=>{ i=Math.max(0,Math.min(nPas(k)-1,i)); val[k.k]=k.t==='seg'?k.v[i]:+(k.min+i*k.pas).toFixed(4); try{ localStorage.setItem(KL,JSON.stringify(val)); }catch(x){} maj(); };
+    const kDe=n=>ctrls.find(k=>k.k===n);
+    if(!fige){
+      z.querySelectorAll('.el-seg button').forEach(b=>b.onclick=()=>regle(kDe(b.dataset.k),+b.dataset.i));
+      z.querySelectorAll('input[type=range][data-k]').forEach(s=>s.oninput=()=>regle(kDe(s.dataset.k),+s.value));
+      z.querySelectorAll('.el-pm[data-k]').forEach(b=>{ let rep=null, t0=null; const k=kDe(b.dataset.k), d=+b.dataset.d, pas=()=>regle(k,idx(k)+d);
+        const stop=()=>{ clearTimeout(t0); clearInterval(rep); };
+        b.onpointerdown=ev=>{ ev.preventDefault(); pas(); t0=setTimeout(()=>{ rep=setInterval(pas,60); },350); };
+        b.onpointerup=stop; b.onpointerleave=stop; b.onpointercancel=stop; }); /* appui long : défilement rapide */
+      $('elGo').onclick=()=>{ $('elGo').disabled=true; z.querySelectorAll('.el-ctrl button,.el-ctrl input').forEach(x=>x.disabled=true); envoyer(encoderLabo(ctrls,val)); };
+    }
+    setTimeout(maj,0); addEventListener('resize',dessin,{once:true});
+  }
   /* --- toucher une zone d'une carte --- */
   function vueTap(e,clos,z){
     const v=S.vote, g=e.geo; let pt=v?[Math.floor(v.c/1000)/999,(v.c%1000)/999]:null;
@@ -879,6 +1272,8 @@ const sonTic=()=>bip(880,0.08,0.05,'square');
 const sonRevele=()=>{ bip(523,0.18); setTimeout(()=>bip(659,0.18),120); setTimeout(()=>bip(784,0.35),240); };
 
 /* ---------- session live ---------- */
+/* adresse courte pour les ordinateurs portables (le code se saisit ensuite) */
+function urlCourte(){ let b=''; try{ b=(localStorage.getItem('hadron_urlpub')||'').trim(); }catch(e){} if(!b) b=location.origin+location.pathname; return b.replace(/^https?:\/\//,'').replace(/\?.*$/,'')+'?e'; }
 function urlEleve(){ let b=''; try{ b=(localStorage.getItem('hadron_urlpub')||'').trim(); }catch(e){}
   if(!b) b=location.origin+location.pathname;
   const sep=b.includes('?')?'&':'?';
@@ -888,6 +1283,8 @@ async function liveDemarrer(kind,url,code,roster){
   const B=kind==='local'?backendLocal():await backendFirebase(url);
   LIVE.B=B; LIVE.url=url; LIVE.code=code; LIVE.on=true;
   if(roster) await B.update('sessions/'+code,{roster,cree:B.TS});
+  LIVE.regles=kind==='local'?true:await sonderRegles(B,code);
+  if(!LIVE.regles) alert('Attention : les règles Firebase ne sont pas à jour.\nLes étudiants ne pourront pas reprendre leur prénom après une déconnexion, et le bouton × ne libère rien.\n\nPubliez le fichier regles_firebase.json dans la console Firebase (Realtime Database → Règles → Publier).');
   LIVE.off=B.on('sessions/'+code,v=>{ LIVE.data=v||{}; rafraichirLive(); });
   try{ localStorage.setItem('hadron_live_prof',JSON.stringify({kind,url,code})); }catch(e){}
   rafraichirLive();
@@ -976,12 +1373,14 @@ function vueModule(n,mod){
     let R; if(m.corriger) R=m.corriger(vs);
     else if(m.type==='choix') R=corrigerChoix(vs,m.r);
     else if(m.type==='golf') R=corrigerGolf(vs,m);
+    else if(m.type==='labo') R=corrigerLabo(vs,m);
     else R=corrigerEstim(vs,m.juste||(v=>Math.abs(v-m.r)<=m.tol+1e-9),m.ecart||(v=>Math.abs(v-m.r)));
     R.aff=R.aff||m.aff||(m.type==='choix'?m.choix[m.r]:''); if(m.type==='choix') R.r=m.r; if(m.txt) R.txt=m.txt;
     return liveCorriger(q,R); }
   function etatPour(m){ const base={type:m.type,lv:(n.bonus?n.num:'Level '+n.num)+' · '+mod.titre,texte:m.texte,duree:m.duree||0};
     if(m.type==='choix') base.choix=m.choix;
     if(m.type==='estim') Object.assign(base,{min:m.min,max:m.max,pas:m.pas||1,dec:m.dec||0,log:!!m.log,si:!!m.si,unite:m.unite||'',def:m.def});
+    if(m.type==='labo') Object.assign(base,{sim:m.sim,cfg:m.cfg});
     if(m.charge) Object.assign(base,m.charge());
     return base; }
   function rendreManches(){
@@ -990,7 +1389,7 @@ function vueModule(n,mod){
       const cl=(J.res?'fait ':'')+(J.actif?'encours ':'')+(op?'ouverte':'')+(!op&&selection===m.id?' selection':'');
       let corps='';
       if(op){
-        const nv=Object.keys(J.votes).length, nb=Math.max(nv,Object.keys(D.joined||{}).length); /* sur le nombre d'étudiants connectés */
+        const nv=Object.keys(J.votes).length, nb=Math.max(nv,connectes(D).length); /* sur le nombre d'étudiants connectés */
         corps=`<div class="mcorps"><div class="mq">${m.texte}</div>`;
         if(m.type==='choix') corps+=`<div class="choix-m">`+m.choix.map((t,k)=>{ const c=Object.values(J.votes).filter(v=>v.c===k).length; const p=nv?100*c/nv:0;
           return `<div class="${J.revele&&k===m.r?'bon':''}">${J.revele&&LIVE.on?`<i style="width:${p}%"></i>`:''}<span class="forme f${k%6}">${FORMES[k%6]}</span><span>${t}</span>${J.revele&&LIVE.on?`<span class="n">${c}</span>`:''}</div>`; }).join('')+'</div>';
@@ -1005,11 +1404,14 @@ function vueModule(n,mod){
           if(LIVE.on&&J.res){ const ok=Object.keys(J.res.ok||{}); const st=m.type==='estim'?statsEstim(J.votes):null;
             if(st) corps+=`<div class="stripw"><canvas class="strip"></canvas></div>`;
             if(st) corps+=`<div class="note">Médiane de la salle : <b>${fmtVal(st.med,m)} ${uniteAff(m)}</b> (de ${fmtVal(st.min,m)} à ${fmtVal(st.max,m)})</div>`;
-            corps+=`<div class="note">${ok.length} / ${nv} dans le vrai${J.res.best?' · bonus : '+echapper(nomDe(J.res.best)):''}</div><div class="gagnants">`+ok.map(id=>`<span class="${id===J.res.best?'best':''}">${echapper(nomDe(id))}</span>`).join('')+(J.res.best&&!ok.includes(J.res.best)?`<span class="best">${echapper(nomDe(J.res.best))}</span>`:'')+'</div>'; }
+            if(m.type==='labo'&&SIMS[m.sim]&&SIMS[m.sim].resume){ /* réglage choisi par chaque étudiant, dans l'ordre des réponses */
+              const ct=ctrlsDe(m.sim,m.cfg), L=Object.entries(J.votes).filter(([,v])=>v&&typeof v.c==='number').sort((a,b)=>a[1].t-b[1].t);
+              corps+=`<div class="note">${ok.length} / ${nv} dans le vrai${J.res.best?' · bonus : '+echapper(nomDe(J.res.best)):''}</div><div class="reglages">`+L.map(([id,v])=>`<span class="${(J.res.ok||{})[id]?'ok':'ko'}${id===J.res.best?' best':''}">${id===J.res.best?'★ ':''}${echapper(nomDe(id))} : ${echapper(SIMS[m.sim].resume(decoderLabo(ct,v.c)))}</span>`).join('')+'</div>'; }
+            else corps+=`<div class="note">${ok.length} / ${nv} dans le vrai${J.res.best?' · bonus : '+echapper(nomDe(J.res.best)):''}</div><div class="gagnants">`+ok.map(id=>`<span class="${id===J.res.best?'best':''}">${echapper(nomDe(id))}</span>`).join('')+(J.res.best&&!ok.includes(J.res.best)?`<span class="best">${echapper(nomDe(J.res.best))}</span>`:'')+'</div>'; }
           corps+='</div>'; }
         corps+='</div>';
       }
-      return `<div class="manche ${cl}"><button class="mt" type="button" data-m="${m.id}"><span class="pastille">${J.res?'✓':i+1}</span><span>${m.titre}</span><span class="typ">${{choix:'choix',estim:'estimation',golf:'mini-jeu',couches:'collectif',tap:'carte'}[m.type]}</span></button>${corps}</div>`; }).join('');
+      return `<div class="manche ${cl}"><button class="mt" type="button" data-m="${m.id}"><span class="pastille">${J.res?'✓':i+1}</span><span>${m.titre}</span><span class="typ">${{choix:'choix',estim:'estimation',golf:'mini-jeu',couches:'collectif',tap:'carte',labo:'labo 📱'}[m.type]}</span></button>${corps}</div>`; }).join('');
     box.querySelectorAll('button.mt').forEach(b=>b.onclick=()=>ouvrir(ouverte===b.dataset.m?null:b.dataset.m));
     const cs=box.querySelector('canvas.strip'); if(cs){ const m=mod.manches.find(x=>x.id===ouverte); requestAnimationFrame(()=>stripReponses(cs,m,jeuDe(m))); }
     box.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{ const m=mod.manches.find(x=>x.id===ouverte), q=qidManche(n,mod,m);
@@ -1064,7 +1466,7 @@ function vueQuiz(n){
   function rendre(){
     if(fin()) return rendreFin();
     const Q=n.quiz[i], q=qid(i), D=D_(), res=LIVE.on?(D.results||{})[q]:(local[i]?{r:Q.r}:null), actif=qActif()===q;
-    const vs=LIVE.on?((D.votes||{})[q]||{}):{}, nv=Object.keys(vs).length, nb=Math.max(nv,Object.keys(D.joined||{}).length);
+    const vs=LIVE.on?((D.votes||{})[q]||{}):{}, nv=Object.keys(vs).length, nb=Math.max(nv,connectes(D).length);
     const cpt=Q.c.map((_,k)=>Object.values(vs).filter(v=>v.c===k).length), mx=Math.max(1,...cpt);
     const rev=!!res, dEt=actif&&D.etat?D.etat.duree:0;
     el.innerHTML=`<div class="qz-haut"><span class="qz-num">Quiz · ${n.bonus?n.num:'Level '+n.num} · question ${i+1} / ${n.quiz.length}</span><div class="qz-dots">${n.quiz.map((_,k)=>`<i class="${(LIVE.on?(D.results||{})[qid(k)]:local[k])?'fait':''} ${k===i?'cur':''}" data-k="${k}" title="Question ${k+1}"></i>`).join('')}</div>
@@ -1139,7 +1541,7 @@ function vueClassement(){
 
 /* ---------- rafraîchissement live, fenêtre, QR ---------- */
 function rafraichirLive(){
-  const D=D_(), nb=Object.keys(D.roster||{}).length, nj=Object.keys(D.joined||{}).length;
+  const D=D_(), nb=Object.keys(D.roster||{}).length, nj=connectes(D).length;
   const b=$('btnLive'); b.textContent=LIVE.on?`📱 ${LIVE.code} · ${nj}/${nb}`:'📱 Live'; b.classList.toggle('on',LIVE.on);
   const v=vueCourante(); if(v&&v.rafraichir){ try{ v.rafraichir(); }catch(e){ console.error(e); } }
   try{ rendreDlg(); }catch(e){ console.error(e); }
@@ -1156,9 +1558,9 @@ function rendreDlg(){
   $('bArreter').hidden=!LIVE.on; $('bEffacer').hidden=!LIVE.on; $('optQR').hidden=!LIVE.on;
   if(!LIVE.on){ z.innerHTML=''; z.dataset.url=''; return; }
   const u=urlEleve(), ids=Object.keys(D.roster||{}).sort((a,b)=>D.roster[a].localeCompare(D.roster[b],'fr'));
-  if(z.dataset.url!==u){ z.dataset.url=u; z.innerHTML=`<div id="qrImg" class="qr"></div><div class="qr-txt"><div class="note">Les étudiants scannent ce code ou ouvrent :</div><a href="${u}" target="_blank" rel="noopener" class="lien">${echapper(u)}</a><div class="note">Code de séance : <b class="code">${LIVE.code}</b></div><div id="joints"></div></div>`; qrDans($('qrImg'),u,Math.round(Math.max(260,Math.min(innerHeight*0.62,innerWidth*0.42,600)))); }
-  $('joints').innerHTML=`<div class="note">${Object.keys(D.joined||{}).length} / ${ids.length} connectés</div><div class="joints">`+ids.map(id=>D.joined&&D.joined[id]?`<span class="in">${echapper(D.roster[id])}<button class="lib" data-id="${id}" type="button" title="Libérer ce prénom (changement de téléphone)">×</button></span>`:`<span>${echapper(D.roster[id])}</span>`).join('')+'</div>'+(Object.keys(D.joined||{}).length?'<div class="note">× : libérer un prénom (l\'étudiant le choisit à nouveau sur son nouveau téléphone ; ses points sont conservés).</div>':'');
-  $('joints').querySelectorAll('.lib').forEach(b=>b.onclick=()=>{ const id=b.dataset.id; if(confirm('Libérer « '+D.roster[id]+' » ? Son ancien téléphone sera déconnecté ; ses points sont conservés.')) LIVE.B.set('sessions/'+LIVE.code+'/joined/'+id,null); });
+  if(z.dataset.url!==u){ z.dataset.url=u; z.innerHTML=`<div id="qrImg" class="qr"></div><div class="qr-txt"><div class="note">Les étudiants scannent ce code ou ouvrent :</div><a href="${u}" target="_blank" rel="noopener" class="lien">${echapper(u)}</a><div class="note">Code de séance : <b class="code">${LIVE.code}</b></div><div class="note">Sur ordinateur portable : <b>${echapper(urlCourte())}</b>, puis le code</div><div id="joints"></div></div>`; qrDans($('qrImg'),u,Math.round(Math.max(260,Math.min(innerHeight*0.62,innerWidth*0.42,600)))); }
+  $('joints').innerHTML=(LIVE.regles===false?'<p class="err">Règles Firebase à mettre à jour : les étudiants ne peuvent pas reprendre leur prénom et × ne fonctionne pas. Publiez regles_firebase.json dans la console Firebase.</p>':'')+`<div class="note">${connectes(D).length} / ${ids.length} connectés</div><div class="joints">`+ids.map(id=>D.joined&&D.joined[id]?`<span class="in">${echapper(D.roster[id])}<button class="lib" data-id="${id}" type="button" title="Libérer ce prénom (changement de téléphone)">×</button></span>`:`<span>${echapper(D.roster[id])}</span>`).join('')+'</div>'+(Object.keys(D.joined||{}).length?'<div class="note">× : libérer un prénom (l\'étudiant le choisit à nouveau sur son nouveau téléphone ; ses points sont conservés).</div>':'');
+  $('joints').querySelectorAll('.lib').forEach(b=>b.onclick=()=>{ const id=b.dataset.id; if(confirm('Libérer « '+D.roster[id]+' » ? Son ancien téléphone sera déconnecté ; ses points sont conservés.')) LIVE.B.set('sessions/'+LIVE.code+'/joined/'+id,null).catch(()=>alert('Refusé par Firebase : les règles ne sont pas à jour (publiez regles_firebase.json).')); });
 }
 function initLiveUI(){
   const dlg=$('dlgLive');
@@ -1318,7 +1720,7 @@ function vueAccueil(){
     if(!LIVE.on){ if(z.dataset.u!=='-'){ z.dataset.u='-'; z.innerHTML='<div class="acc-vide"><span>📱</span><p>Le QR code de connexion s\'affiche ici dès que la séance est créée (bouton « 📱 Live »).</p></div>'; } return; }
     const u=urlEleve(), t=Math.round(Math.max(180,Math.min(innerHeight*0.5,innerWidth*0.26))), cle=u+'|'+t;
     if(z.dataset.u===cle) return; z.dataset.u=cle;
-    z.innerHTML=`<div class="qr" id="qrAcc"></div><div class="acc-code">Code <b>${LIVE.code}</b></div><ol class="acc-etapes"><li>Scannez le QR code</li><li>Touchez votre prénom</li><li>Répondez sur votre téléphone</li></ol>`;
+    z.innerHTML=`<div class="qr" id="qrAcc"></div><div class="acc-code">Code <b>${LIVE.code}</b></div><ol class="acc-etapes"><li>Scannez le QR code</li><li>Touchez votre prénom</li><li>Répondez sur votre téléphone</li></ol><div class="acc-pc">💻 Sur ordinateur : <b>${echapper(urlCourte())}</b><br>puis le code <b>${LIVE.code}</b></div>`;
     qrDans(z.querySelector('#qrAcc'),u,t); }
   function rendre(){
     const D=D_(), ros=D.roster||{}, jn=D.joined||{}, ids=Object.keys(ros).sort((a,b)=>ros[a].localeCompare(ros[b],'fr')), nj=ids.filter(id=>jn[id]).length;
@@ -1568,24 +1970,8 @@ NIVEAUX.push({id:'L2',num:'2',court:'Production',titre:'Production des faisceaux
 /* ===================== Level 3 : Sélecteur d'énergie et transport ===================== */
 (function(){
 /* ---------- Module A : aiguillage magnétique (rigidité Bρ) ---------- */
-const RHO0=1.29, TH0=Math.PI/3, LDR=1.2, TOLR=0.025;
 let ionA='p';
-function trajectoire(rho){ /* dipôle secteur de 60°, entrée en (0,0) vers +x ; renvoie points (m), offset final (m) ou perdu */
-  const pts=[], C0y=RHO0, s0=Math.sin(TH0), c0=Math.cos(TH0);
-  const F=ph=>s0*(rho*(1-Math.cos(ph))-C0y)+c0*rho*Math.sin(ph);
-  let phi=null, prev=F(1e-4);
-  for(let ph=0.002;ph<Math.PI*1.5;ph+=0.002){ const v=F(ph); if(prev<0&&v>=0||prev>0&&v<=0){ phi=ph; break; } prev=v; }
-  const lim=phi==null?Math.min(Math.PI,2*Math.asin(Math.min(1,0.5/rho))+0.3):phi;
-  for(let ph=0;ph<=lim+1e-9;ph+=lim/80) pts.push([rho*Math.sin(ph),rho*(1-Math.cos(ph))]);
-  if(phi==null) return {pts,perdu:true,off:Infinity};
-  const P=[rho*Math.sin(phi),rho*(1-Math.cos(phi))], d=[Math.cos(phi),Math.sin(phi)];
-  const E0=[RHO0*s0+LDR*c0,RHO0*(1-c0)+LDR*s0], n0=[c0,s0], t0=[-s0,c0];
-  const den=d[0]*n0[0]+d[1]*n0[1]; if(den<=0.05) return {pts,perdu:true,off:Infinity};
-  const s=((E0[0]-P[0])*n0[0]+(E0[1]-P[1])*n0[1])/den, F2=[P[0]+s*d[0],P[1]+s*d[1]];
-  pts.push(F2); const off=(F2[0]-E0[0])*t0[0]+(F2[1]-E0[1])*t0[1];
-  return {pts,perdu:false,off};
-}
-const OUV=Math.abs(trajectoire(RHO0*(1+TOLR)).off); /* demi-ouverture du tube : tolérance ±2,5 % sur B */
+/* géométrie du dipôle (RHO0, trajectoire, OUV) : dans labo.js, partagée avec les téléphones */
 const modA={id:'a',titre:'Aiguillage magnétique',
   html:`<div class="titre-graphe"><h3>Dipôle de 60° : quel champ pour envoyer le faisceau dans le tube ?</h3>
       <div class="seg" id="l3ion"><button type="button" data-v="p" class="actif">p</button><button type="button" data-v="He">⁴He²⁺</button><button type="button" data-v="C">¹²C⁶⁺</button></div></div>
@@ -1596,19 +1982,17 @@ const modA={id:'a',titre:'Aiguillage magnétique',
       <div class="curseur"><label for="l3B"><span>Champ du dipôle</span> <output id="l3Bo"></output></label><input type="range" id="l3B" min="0.3" max="6" step="0.01" value="1.8"></div>
     </div>`,
   sources:'⁴He²⁺ et ¹²C⁶⁺ ont le même rapport A/Z = 2 : à même énergie par nucléon, même rigidité, donc même trajectoire. Diapo 75 : Bρ [T·m] = p [MeV/c] / (299,8·z), ρ = Bρ/B, pc = √(T² + 2T·mc²) ; p 230 MeV : 2,3 T·m, ρ = 1,3 m à 1,8 T ; ¹²C 430 MeV/u : 6,6 T·m, ρ = 3,7 m. Dipôle secteur de 60° (comme le B3G du Proteus One), rayon nominal 1,29 m, tube à 1,2 m de la sortie ; le tube accepte un écart de ±2,5 % sur B.'+SRC_PEDA,
+  consigne:'Sur son téléphone, chacun choisit la particule, l\'énergie et le champ du dipôle, et voit la trajectoire en direct. Le plus rapide à entrer dans le tube gagne le bonus.',
   manches:[
-    {id:'1',type:'choix',titre:'Protons de 230 MeV',masque:true,texte:'Protons de <b>230 MeV</b> : rigidité <b>Bρ = 2,32 T·m</b>. Dipôle de rayon <b>1,29 m</b> : quel champ pour qu\'ils entrent dans le tube ?',
-     choix:['≈ 0,9 T','≈ 1,8 T','≈ 3,0 T','≈ 5,1 T'],champs:[0.9,1.8,3.0,5.1],r:1,
-     regler:()=>reglerA('p',230,1),apres:()=>reglerA('p',230,brho('p',230)/RHO0),
-     e:'B = Bρ / ρ = 2,32 / 1,29 ≈ 1,80 T (aimant classique, conducteur en cuivre). Bρ = pc / (299,8 × z), avec pc = √(T² + 2T·mc²) ≈ 696 MeV/c.'},
-    {id:'2',type:'choix',titre:'Protons dégradés à 100 MeV',masque:true,texte:'Après le dégradeur, les protons n\'ont plus que <b>100 MeV</b>. Dans le même dipôle, quel champ faut-il ?',
-     choix:['1,8 T, inchangé','≈ 1,15 T (proportionnel à l\'impulsion)','≈ 0,8 T (proportionnel à l\'énergie)','plus de 1,8 T'],champs:[1.8,1.15,0.78,2.2],r:1,
-     regler:()=>reglerA('p',100,1.8),apres:()=>reglerA('p',100,brho('p',100)/RHO0),
-     e:'B suit l\'<b>impulsion</b>, pas l\'énergie : pc passe de 696 à 445 MeV/c (× 0,64), donc B ≈ 1,15 T. Tous les éléments de la ligne (dégradeur, dipôles, quadripôles, fentes) changent de réglage à chaque couche en énergie (diapo 131) : d\'où un temps mort entre deux couches en PBS.'},
-    {id:'3',type:'choix',titre:'Ions carbone de 430 MeV/u',masque:true,texte:'Ions <b>¹²C⁶⁺ de 430 MeV/u</b> (≈ 30 cm dans l\'eau, comme les protons de 230 MeV). Dans le même dipôle, quel champ ?',
-     choix:['≈ 1,8 T : le même','≈ 2,7 T : 1,5 fois plus','≈ 5,1 T : près de 3 fois plus','≈ 21 T : 12 fois plus'],champs:[1.8,2.7,brho('C',430)/RHO0,21],r:2,
-     regler:()=>reglerA('C',430,1.8),apres:()=>reglerA('C',430,brho('C',430)/RHO0),
-     e:'Bρ ≈ 6,6 T·m, près de 3 fois celui des protons à parcours égal : B ≈ 5,1 T, hors de portée d\'un aimant classique (≈ 1,8 T). Soit des aimants supraconducteurs, soit un rayon de 3,7 m à 1,8 T : la gantry carbone de Heidelberg pèse ≈ 600 t.'},
+    {id:'1',type:'labo',sim:'dipole',cfg:{ion:'p',E:230},masque:true,titre:'Protons de 230 MeV',texte:'Envoie des <b>protons de 230 MeV</b> dans le tube : choisis la particule et l\'énergie, puis règle le champ du dipôle.',
+     aff:'p, 230 MeV, B ≈ 1,80 T',regler:()=>reglerA('p',150,1),apres:()=>reglerA('p',230,brho('p',230)/RHO0),
+     e:'B = Bρ / ρ = 2,32 / 1,29 ≈ 1,80 T, accessible à un aimant classique (cuivre). Bρ = p / q : c\'est l\'impulsion, pas l\'énergie, qui fixe la courbure.'},
+    {id:'2',type:'labo',sim:'dipole',cfg:{ion:'p',E:100},masque:true,titre:'Protons dégradés à 100 MeV',texte:'Après le dégradeur, les protons n\'ont plus que <b>100 MeV</b>. Envoie-les dans le tube.',
+     aff:'p, 100 MeV, B ≈ 1,15 T',regler:()=>reglerA('p',100,brho('p',230)/RHO0),apres:()=>reglerA('p',100,brho('p',100)/RHO0),
+     e:'B ≈ 1,15 T : le champ suit l\'<b>impulsion</b> (696 → 445 MeV/c, × 0,64), pas l\'énergie (× 0,43). À chaque couche en énergie, toute la ligne (dégradeur, dipôles, quadripôles, fentes) change de réglage : d\'où un temps mort entre deux couches en PBS (diapo 131).'},
+    {id:'3',type:'labo',sim:'dipole',cfg:{ion:'C',E:430},masque:true,titre:'Ions carbone de 430 MeV/u',texte:'Envoie des ions <b>carbone de 430 MeV/u</b> dans le tube (≈ même parcours dans l\'eau que les protons de 230 MeV).',
+     aff:'¹²C, 430 MeV/u, B ≈ 5,1 T',regler:()=>reglerA('C',430,brho('p',230)/RHO0),apres:()=>reglerA('C',430,brho('C',430)/RHO0),
+     e:'Bρ ≈ 6,6 T·m, près de 3 fois celui des protons à parcours égal : il faut ≈ 5,1 T, hors de portée d\'un aimant classique (≈ 1,8 T). Soit des aimants supraconducteurs, soit un rayon de 3,7 m : la gantry carbone de Heidelberg pèse ≈ 600 t. ⁴He²⁺ a le même A/Z que le carbone : même rigidité à même énergie par nucléon.'},
   ],
   init(){ seg('l3ion',v=>{ ionA=v; this.redessiner(); }); ['l3E','l3B'].forEach(n=>$(n).addEventListener('input',()=>this.redessiner())); observer(['cvDip'],()=>this.redessiner()); },
   redessiner(){
@@ -1636,7 +2020,7 @@ const modA={id:'a',titre:'Aiguillage magnétique',
     const tracer=(rho,col,lw)=>{ const T=trajectoire(rho); trait(ctx,T.pts.map(([x,y])=>[X(x),Y(y)]),col,lw); return T; };
     const R=reponses(this);
     if(R.length&&J&&J.m){ ctx.font=Math.round(fs*0.85)+'px '+POLICE; const lab=[];
-      R.forEach(r=>{ const Bv=J.m.champs?J.m.champs[r.v]:r.v; if(!(Bv>0)) return; const T=tracer(br/Bv,r.ok?css('--juste'):css('--faux'),1.3); const p=T.pts[T.pts.length-1]; lab.push({x:X(p[0]),y:Y(p[1]),r}); });
+      R.forEach(r=>{ let rho; if(J.m.type==='labo'){ const w=decoderLabo(ctrlsDe('dipole',J.m.cfg),r.v); rho=brho(w.ion,w.E)/w.B; } else { const Bv=J.m.champs?J.m.champs[r.v]:null; if(!(Bv>0)) return; rho=br/Bv; } const T=tracer(rho,r.ok?css('--juste'):css('--faux'),1.3); const p=T.pts[T.pts.length-1]; lab.push({x:X(p[0]),y:Y(p[1]),r}); });
       lab.sort((a,b)=>a.y-b.y); let last=fs*0.6-fs*0.95; lab.forEach(l=>{ const y=Math.max(l.y,last+fs*0.95); last=y; etiquette(ctx,(l.r.best?'★ ':'')+l.r.nom,l.x+5,y,l.r.best?css('--dose'):l.r.ok?css('--juste'):css('--faux'),Math.round(fs*0.85),'left'); }); }
     const T=tracer(br/B,css('--dose'),3.5);
     const ok=!T.perdu&&Math.abs(T.off)<=OUV;
@@ -1646,9 +2030,6 @@ const modA={id:'a',titre:'Aiguillage magnétique',
 function reglerA(k,W,B){ ionA=k; segVal('l3ion',k); $('l3E').value=W; $('l3B').value=B; modA.redessiner(); }
 
 /* ---------- Module B : dégradeur et sélecteur d'énergie (ESS) ---------- */
-function ess(E,d){ const R0=Rbk(230), R=Rbk(E), t=R0-R, sR=Math.sqrt(Math.max(0,sigStrag(R0)**2-sigStrag(R)**2)), rel=Math.max(1e-6,sR/(P*R));
-  const a=d/rel, fE=erf(a/Math.SQRT2), phi=Math.exp(-a*a/2)/Math.sqrt(2*Math.PI), vr=Math.max(0,1-2*a*phi/Math.max(1e-9,fE));
-  const nuc=Math.exp(-0.012*t); return {t,rel,fE,nuc,T:fE*nuc,relOut:rel*Math.sqrt(vr)}; }
 const modB={id:'b',titre:'Dégradeur et sélecteur d\'énergie',
   html:`<div class="titre-graphe"><h3>Du cyclotron (230 MeV) à l'énergie de la couche : dégradeur, dipôle, fentes</h3></div>
     <div class="graphe g13"><canvas id="cvESS" aria-label="Schéma du sélecteur d'énergie"></canvas></div>
@@ -1659,13 +2040,14 @@ const modB={id:'b',titre:'Dégradeur et sélecteur d\'énergie',
       <div class="curseur"><label for="l3d"><span>Ouverture des fentes (± δE/E)</span> <output id="l3do"></output></label><input type="range" id="l3d" min="0.2" max="3" step="0.1" value="1"></div>
     </div>`,
   sources:'Diapos 85-92 : dégradeur à faible Z (Al > 220 MeV, graphite 120-220 MeV, Be < 120 MeV), collimateur Ø 1 cm, dipôle 40° (B1G) qui disperse selon l\'énergie, fentes de sélection ; ΔE/E ≈ 1 % en sortie. Modèle : épaisseur équivalent-eau = R(230) − R(E) (Bragg-Kleeman), dispersion par straggling accumulé, pertes nucléaires 1,2 %/cm. La transmission réelle est encore plus faible (divergence coupée par les fentes et le collimateur).'+SRC_PEDA,
+  consigne:'Sur son téléphone, chacun règle la simulation et voit le résultat en direct, puis valide. Le plus rapide parmi les bonnes réponses gagne le bonus.',
   manches:[
-    {id:'1',type:'estim',titre:'Épaisseur du dégradeur',masque:true,texte:'Le cyclotron sort <b>230 MeV</b>. Quelle épaisseur d\'eau équivalente le dégradeur doit-il avoir pour ne laisser que <b>100 MeV</b> ?',min:0,max:40,pas:0.5,dec:1,def:10,unite:'cm d\'eau',
-     r:Rbk(230)-Rbk(100),tol:1.5,aff:'≈ 25,7 cm d\'eau',regler:()=>{ $('l3e').value=100; modB.redessiner(); },
-     e:'R(230) − R(100) ≈ 33,3 − 7,6 ≈ 25,7 cm (tableau des parcours du level 4). En graphite ou en béryllium, plus denses et de faible Z, l\'épaisseur physique est plus petite pour la même perte d\'énergie.'},
-    {id:'2',type:'choix',titre:'Basse énergie',texte:'On passe de 150 MeV à <b>70 MeV</b> avec les mêmes fentes. Que devient la transmission jusqu\'à la salle ?',
-     choix:['Elle augmente','Elle reste la même','Elle chute fortement'],r:2,regler:()=>{ $('l3e').value=150; $('l3d').value=1; modB.redessiner(); },apres:()=>{ $('l3e').value=70; modB.redessiner(); },
-     e:'Plus de matière traversée : dispersion en énergie plus large (davantage coupée par les fentes) et plus de pertes nucléaires. Il faut plus de courant au cyclotron ; les protons perdus activent le dégradeur et les fentes (radioprotection). Les synchrotrons, eux, n\'ont pas de dégradeur.'},
+    {id:'1',type:'labo',sim:'ess',cfg:{but:'disp',E:100,disp:0.3,Tmin:12},masque:true,titre:'Un faisceau fin en énergie',texte:'Délivre des protons de <b>100 MeV</b> avec une dispersion σE/E ≤ <b>0,3 %</b> après les fentes, en gardant <b>le plus de protons possible</b> (au moins 12 %).',
+     aff:'100 MeV, fentes à ± 0,5 % (≈ 13 % des protons transmis)',regler:()=>{ $('l3e').value=180; $('l3d').value=2; modB.redessiner(); },apres:()=>{ $('l3e').value=100; $('l3d').value=0.5; modB.redessiner(); },
+     e:'Le dégradeur élargit le spectre (pertes d\'énergie aléatoires, straggling) ; les fentes coupent les protons hors de la bande voulue. Plus on les ferme, plus le faisceau est fin… et moins il reste de protons : compromis entre dispersion et intensité (ΔE/E ≈ 1 % en clinique).'},
+    {id:'2',type:'labo',sim:'ess',cfg:{but:'emin',d:1,Tmin:25,Emax:104},masque:true,titre:'Jusqu\'où descendre ?',texte:'Fentes à <b>± 1 %</b>. Trouve l\'<b>énergie la plus basse</b> qui garde au moins <b>25 %</b> des protons.',
+     aff:'≈ 101 MeV',regler:()=>{ $('l3e').value=180; $('l3d').value=1; modB.redessiner(); },apres:()=>{ $('l3e').value=101; $('l3d').value=1; modB.redessiner(); },
+     e:'Plus on dégrade, plus le spectre est large (davantage coupé par les fentes) et plus les pertes nucléaires augmentent. À basse énergie, il faut plus de courant au cyclotron ; les protons perdus activent le dégradeur et les fentes (radioprotection). Les synchrotrons, eux, n\'ont pas de dégradeur.'},
   ],
   init(){ ['l3e','l3d'].forEach(n=>$(n).addEventListener('input',()=>this.redessiner())); observer(['cvESS','cvSpec'],()=>this.redessiner()); },
   redessiner(){
@@ -1721,7 +2103,7 @@ const R0de=(k,E)=>{ const I=IONS[k]; return I.A/(I.Z*I.Z)*A*Math.pow(E,P); };
 const Emem={p:150,He:150,C:279};
 function reglerL4(k,E,os,cib,sE){ ion=k; segVal('l4ion',k); const I=IONS[k]; const e=$('l4E'); e.min=I.min; e.max=I.max; e.value=E; Emem[k]=E; if(sE!=null) $('l4s').value=sE; avecOs=!!os; $('l4os').checked=avecOs; cible=cib||null; figees=[]; mod.maj(); }
 const mod={id:'a',titre:'Vise la tumeur',
-  consigne:'Chaque étudiant choisit l\'énergie au curseur : son pic de Bragg s\'affiche comme une fléchette sur la cible.',
+  consigne:'Sur son téléphone, chacun choisit la particule et l\'énergie, et voit son pic de Bragg en direct. Le plus rapide à atteindre le bord de la tumeur gagne le bonus.',
   html:`<div class="titre-graphe"><h3>Le pic de Bragg : viser le bord distal de la tumeur</h3>
       <div class="seg" id="l4ion"><button type="button" data-v="p" class="actif">p</button><button type="button" data-v="He">⁴He</button><button type="button" data-v="C">¹²C</button></div>
       <div class="legende"><span class="l l-dose">Dose (%)</span><span class="l l-S">S (MeV/cm, à droite)</span><span class="l l-phi">Fluence primaire (%)</span></div></div>
@@ -1735,15 +2117,15 @@ const mod={id:'a',titre:'Vise la tumeur',
     </div>`,
   sources:'Bortfeld (Med. Phys. 24, 1997) : R = αE<sup>p</sup> (α = 0,0022 cm·MeV<sup>−p</sup>, p = 1,77), pertes nucléaires 1,2 %/cm, straggling σ ≈ 0,012·R<sup>0,935</sup> (diapos 106-107). Ions : R ∝ A/z² à énergie par nucléon égale, σ ∝ 1/√A (diapo 113) ; queue de fragmentation en ordre de grandeur. Os cortical : SPR 1,65 (diapo 108) ; la courbe est tracée en profondeur géométrique.'+SRC_PEDA,
   manches:[
-    {id:'1',type:'estim',titre:'Tumeur à 15,6 cm',masque:true,texte:'Le bord distal de la tumeur est à <b>15,6 cm</b> de profondeur (eau). Quelle énergie de <b>protons</b> pour que le parcours (R80) tombe dessus ?',min:70,max:230,pas:1,dec:0,def:100,unite:'MeV',
-     r:150,tol:2,aff:'150 MeV',regler:()=>reglerL4('p',100,false,[12.6,15.6]),apres:()=>reglerL4('p',150,false,[12.6,15.6]),
-     e:'R = 0,0022 × 150<sup>1,77</sup> ≈ 15,6 cm (tableau de la diapo 107). Le R80 distal est une bonne estimation du parcours moyen R0 (50 % des protons arrêtés). ±2 MeV, c\'est déjà ±3,5 mm de parcours (ΔR/R ≈ 1,8 ΔE/E).'},
-    {id:'2',type:'estim',titre:'Même tumeur, derrière de l\'os',masque:true,texte:'Même tumeur (bord distal à 15,6 cm), mais le faisceau traverse <b>2 cm d\'os cortical</b> (SPR = 1,65). Quelle énergie ?',min:70,max:230,pas:1,dec:0,def:150,unite:'MeV',
-     r:Math.round(Ebk(15.6+2*0.65)),tol:2,aff:'≈ 157 MeV',regler:()=>reglerL4('p',150,true,[12.6,15.6]),apres:()=>reglerL4('p',Math.round(Ebk(15.6+2*0.65)),true,[12.6,15.6]),
-     e:'WET de l\'os = 2 × 1,65 = 3,3 cm : profondeur équivalent-eau 15,6 + 1,3 = 16,9 cm, soit ≈ 157 MeV. À 150 MeV, le pic remonterait de 1,3 cm et manquerait le bord distal. Une erreur sur le SPR est une erreur de parcours (level 8).'},
-    {id:'3',type:'estim',titre:'Même parcours en carbone',masque:true,texte:'Ions <b>carbone</b> : quelle énergie <b>par nucléon</b> pour un parcours de 15,6 cm dans l\'eau ?',min:100,max:430,pas:1,dec:0,def:150,unite:'MeV/u',
-     r:Math.round(Epour('C',15.6)),tol:4,aff:'≈ 279 MeV/u',regler:()=>reglerL4('C',150,false,[12.6,15.6],0.1),apres:()=>reglerL4('C',Math.round(Epour('C',15.6)),false,[12.6,15.6],0.1),
-     e:'À énergie par nucléon égale, R(¹²C) = (A/z²)·R(p) = R(p)/3. Il faut donc l\'énergie d\'un proton de parcours 3 × 15,6 = 46,8 cm, soit ≈ 279 MeV/u (pour l\'hélium, A/z² = 1 : même énergie que les protons). Pic plus fin, mais queue de fragmentation.'},
+    {id:'1',type:'labo',sim:'bragg',cfg:{ion:'p',cible:[12.6,15.6]},masque:true,titre:'Tumeur à 15,6 cm',texte:'Le bord distal de la tumeur est à <b>15,6 cm</b> (eau). Avec des <b>protons</b>, règle l\'énergie pour que la fin du pic (R80) tombe dessus.',
+     aff:'≈ 150 MeV',regler:()=>reglerL4('p',100,false,[12.6,15.6]),apres:()=>reglerL4('p',150,false,[12.6,15.6]),
+     e:'R = 0,0022 × 150<sup>1,77</sup> ≈ 15,6 cm (diapo 107). Le R80 distal est une bonne estimation du parcours moyen R0. ±1 MeV, c\'est déjà ±2 mm de parcours (ΔR/R ≈ 1,8 ΔE/E).'},
+    {id:'2',type:'labo',sim:'bragg',cfg:{ion:'p',cible:[12.6,15.6],os:true},masque:true,titre:'Même tumeur, derrière de l\'os',texte:'Même tumeur, mais le faisceau traverse <b>2 cm d\'os cortical</b> (SPR = 1,65). Règle l\'énergie des <b>protons</b>.',
+     aff:'≈ 157 MeV',regler:()=>reglerL4('p',150,true,[12.6,15.6]),apres:()=>reglerL4('p',Math.round(Ebk(15.6+2*0.65)),true,[12.6,15.6]),
+     e:'WET de l\'os = 2 × 1,65 = 3,3 cm : profondeur équivalent-eau 15,6 + 1,3 = 16,9 cm, soit ≈ 157 MeV. À 150 MeV, le pic remonterait de 1,3 cm. Une erreur sur le SPR est une erreur de parcours (level 8).'},
+    {id:'3',type:'labo',sim:'bragg',cfg:{ion:'C',cible:[12.6,15.6]},masque:true,titre:'Même parcours en carbone',texte:'Même tumeur (15,6 cm, sans os) avec des <b>ions carbone</b> : quelle énergie par nucléon ?',
+     aff:'≈ 279 MeV/u',regler:()=>reglerL4('C',150,false,[12.6,15.6],0.1),apres:()=>reglerL4('C',Math.round(Epour('C',15.6)),false,[12.6,15.6],0.1),
+     e:'À énergie par nucléon égale, R(¹²C) = (A/z²)·R(p) = R(p)/3 : il faut l\'énergie d\'un proton de parcours 3 × 15,6 = 46,8 cm, soit ≈ 279 MeV/u. Pic plus fin, mais queue de fragmentation au-delà.'},
   ],
   maj(){ const E=+$('l4E').value, sE=+$('l4s').value/100; Emem[ion]=E; $('l4Eo').textContent=E+' '+IONS[ion].unite; $('l4so').textContent=fr(+$('l4s').value,1)+' %'; cur=calcul(ion,E,sE); this.redessiner(); },
   init(){ seg('l4ion',v=>{ ion=v; const I=IONS[v], e=$('l4E'), E0=+e.value; e.min=I.min; e.max=I.max; e.value=Math.max(I.min,Math.min(I.max,E0)); /* même énergie par nucléon (bornée à la plage de l'ion) */ $('l4s').value=v==='p'?0.5:0.1; this.maj(); });
@@ -1777,7 +2159,7 @@ const mod={id:'a',titre:'Vise la tumeur',
       trait(ctx,courbe(c.D),css('--dose'),3);
     } else etiquette(ctx,'?',X(zmax*0.5),Y(55),css('--choix'),fs*3,'center');
     ctx.restore();
-    if(R.length&&J&&J.m){ const k=J.m.id==='3'?'C':'p'; flechettes(ctx,R.map(r=>Object.assign({},r,{nom:r.nom+' ('+fr(r.v,0)+')'})),E=>X(zDe(R0de(k,E))),g.y,-1,fs,g); }
+    if(R.length&&J&&J.m){ const ct=ctrlsDe('bragg',J.m.cfg); flechettes(ctx,R.map(r=>{ const w=decoderLabo(ct,r.v); return Object.assign({},r,{nom:r.nom+' ('+(w.ion==='p'?'':IONS[w.ion].nom+' ')+fr(w.E,0)+')',v:R0de(w.ion,w.E)}); }),z=>X(zDe(z)),g.y,-1,fs,g); }
   }
 };
 NIVEAUX.push({id:'L4',num:'4',court:'Interactions',titre:'Interactions des protons avec la matière',diapos:'94-114',modules:[mod],quiz:[
@@ -1798,13 +2180,7 @@ NIVEAUX.push({id:'L4',num:'4',court:'Interactions',titre:'Interactions des proto
 (function(){
 /* ---------- Module A : SOBP construit par la salle + balayage latéral ---------- */
 let modeP='opt', S5=null, Lt=null;
-function lateral(sig,sp){
-  const W=30, n=Math.floor(W/sp+1e-9), pos=[]; for(let k=-n;k<=n;k++) pos.push(k*sp);
-  const xs=[], ys=[]; for(let x=-45;x<=45+1e-9;x+=0.1){ let a=0; pos.forEach(c=>a+=Math.exp(-0.5*(x-c)*(x-c)/(sig*sig))); xs.push(x); ys.push(a); }
-  const ctr=ys.filter((_,i)=>Math.abs(xs[i])<=20), moy=ctr.reduce((a,b)=>a+b)/ctr.length;
-  const y=ys.map(v=>100*v/moy), c2=ctr.map(v=>100*v/moy);
-  return {sig,sp,pos,xs,y,moy,ond:(Math.max(...c2)-Math.min(...c2))/2,ratio:sp/(2.355*sig)};
-}
+/* lateral(sig,sp) : dans labo.js, partagée avec les téléphones */
 const CONF={'1':{zp:13,zd:15,dz:5},'2':{zp:11.5,zd:15,dz:5}};
 function poidsEquipe(vs,n){ const s=new Array(n).fill(0), c=new Array(n).fill(0); s[0]=100; c[0]=1;
   Object.values(vs||{}).forEach(v=>{ const k=Math.floor(v.c/1000), w=v.c%1000; if(k>0&&k<n){ s[k]+=w; c[k]++; } });
@@ -1885,7 +2261,9 @@ const modA={id:'a',titre:'SOBP à plusieurs mains',
   }
 };
 /* ---------- Module : espacement des spots (balayage latéral d'une couche) ---------- */
+const SPM=spotsMin(5,1); /* plus petit nombre de spots pour une ondulation ≤ ±1 % (σ = 5 mm) */
 const modS={id:'c',titre:'Espacement des spots',
+  consigne:'Sur son téléphone, chacun règle l\'espacement et voit la dose en direct. Le plus rapide à trouver le bon réglage gagne le bonus.',
   html:`<div class="titre-graphe"><h3>Balayage latéral d'une couche</h3><span class="note">Spots gaussiens de même poids ; la courbe orange est la somme.</span></div>
     <div class="graphe"><canvas id="cvLat" aria-label="Superposition de spots"></canvas><div class="info" id="l5info2"></div></div>
     <div class="cmd">
@@ -1895,9 +2273,9 @@ const modS={id:'c',titre:'Espacement des spots',
     </div>`,
   sources:'Spots gaussiens de même poids, FWHM = 2,355 σ, règle « espacement < 80 % de la FWHM » (diapo 130).'+SRC_PEDA,
   manches:[
-    {id:'1',type:'estim',titre:'Espacement des spots',masque:true,texte:'Spot de <b>σ = 5 mm</b>. Quel espacement <b>maximal</b> pour respecter la règle « espacement &lt; 80 % de la FWHM » ?',min:2,max:16,pas:0.2,dec:1,def:5,unite:'mm',
-     r:0.8*2.355*5,tol:0.5,aff:'≈ 9,4 mm',regler:()=>{ $('l5sig').value=5; $('l5esp').value=5; modS.maj(); },apres:()=>{ $('l5esp').value=9.4; modS.maj(); },
-     e:'FWHM = 2,355 σ ≈ 11,8 mm, et 80 % de 11,8 ≈ 9,4 mm : l\'ondulation reste sous ±1 %. À 15 mm (3 σ), elle atteint ±20 %. Plus serré, c\'est plus homogène, mais plus long à délivrer.'} ],
+    {id:'1',type:'labo',sim:'spots',cfg:{sig:5,ond:1,nmax:SPM.n},masque:true,titre:'Le moins de spots possible',texte:'Spots de <b>σ = 5 mm</b>. Couvre le champ de 6 cm avec le <b>moins de spots possible</b>, en gardant une ondulation de dose ≤ <b>± 1 %</b>.',
+     aff:SPM.n+' spots (espacement jusqu\'à ≈ '+fr(SPM.sp,1)+' mm)',regler:()=>{ $('l5sig').value=5; $('l5esp').value=4; modS.maj(); },apres:()=>{ $('l5esp').value=SPM.sp; modS.maj(); },
+     e:'FWHM = 2,355 σ ≈ 11,8 mm ; la règle « espacement < 80 % de la FWHM » donne ≈ 9,4 mm. Moins de spots, c\'est un traitement plus rapide ; trop espacés, la dose ondule (± 20 % à 15 mm).'}],
   maj(){ $('l5sigo').textContent=fr(+$('l5sig').value,1)+' mm'; $('l5espo').textContent=fr(+$('l5esp').value,1)+' mm'; Lt=lateral(+$('l5sig').value,+$('l5esp').value); this.redessiner(); },
   init(){ ['l5sig','l5esp'].forEach(n=>$(n).addEventListener('input',()=>this.maj())); $('l5spots').addEventListener('change',()=>this.redessiner()); observer(['cvLat'],()=>this.redessiner()); this.maj(); },
   redessiner(){ if(!Lt) return; let P0;
@@ -1916,45 +2294,9 @@ const modS={id:'c',titre:'Espacement des spots',
   }
 };
 /* ---------- Module B : double diffusion ou balayage ---------- */
-const ES=14.1, X0=36.08;
-function sigmaMCS(E){ const b=calcul('p',E,0.005), sM=new Float64Array(N); let A0=0,A1=0,A2=0;
-  for(let i=0;i<N;i++){ const zm=i*DZ+DZ/2, u=b.R0-zm;
-    if(u>0){ const T=Math.pow(u/A,1/P), pc=Math.sqrt(T*T+2*T*MP), pv=pc*pc/(T+MP), t=Math.pow(ES/pv,2)/X0; A0+=t*DZ; A1+=zm*t*DZ; A2+=zm*zm*t*DZ; }
-    const z=Math.min(zm,b.R0); sM[i]=Math.sqrt(Math.max(0,z*z*A0-2*z*A1+A2))*10; }
-  return sM; }
-const ZREF=14.5, XG=[], ZG=[]; for(let x=-40;x<=40;x++) XG.push(x); for(let z=0;z<=18.0001;z+=0.1) ZG.push(+z.toFixed(1));
-const FORMES2={
-  ellipse:x=>{const a=25; if(Math.abs(x)>a) return null; const h=2.5*Math.sqrt(1-(x/a)**2); return h<0.15?null:{zp:11.5-h,zd:11.5+h};},
-  coque:x=>{const a=28; if(Math.abs(x)>a) return null; const zd=14-2.5*(1-(x/a)**2); return {zp:zd-2,zd};},
-  coin:x=>{const a=25; if(Math.abs(x)>a) return null; return {zp:9+4*(x+a)/(2*a),zd:14};},
-};
-const gabarits=new Map(); let forme='ellipse', C4=null, sMref=null;
-function gabarit(M){ const k=M.toFixed(1); if(!gabarits.has(k)) gabarits.set(k, sobp(ZREF-M,ZREF,5,'opt').tot); return gabarits.get(k); }
-function colonne(T,shift){ return ZG.map(z=>{const i=Math.round((z+shift)/DZ); return (i>=0&&i<N)?T[i]:0;}); }
-function flou(M,sig){ const out=M.map(c=>c.slice());
-  for(let iz=0;iz<ZG.length;iz++){ const sg=Math.max(0.3,sig(ZG[iz])), m=Math.ceil(4*sg); const ker=[]; let sk=0;
-    for(let j=-m;j<=m;j++){const v=Math.exp(-0.5*j*j/(sg*sg)); ker.push(v); sk+=v;}
-    for(let ix=0;ix<XG.length;ix++){ let a=0; for(let j=-m;j<=m;j++){const q=ix-j; if(q>=0&&q<XG.length) a+=ker[j+m]*M[q][iz];} out[ix][iz]=a/sk; } }
-  return out; }
-function bilan(D,F){ let cible=0,couv=0,sain=0;
-  XG.forEach((x,ix)=>{const t=F(x); ZG.forEach((z,iz)=>{ const dedans=t&&z>=t.zp&&z<=t.zd, d=D[ix][iz]; if(dedans){cible++; if(d>=95) couv++;} else if(d>=90) sain++; });});
-  return {couv:100*couv/cible, sain:sain*0.01}; }
-function elargie(F,m,mz){ return x=>{ let t=F(x); for(let d=0.5;!t&&d<=m+1e-9;d+=0.5) t=F(x-d)||F(x+d); return t?{zp:t.zp-mz,zd:t.zd+mz}:null; }; }
-function calcul4(){
-  const F=FORMES2[forme], sig=+$('l5s4').value;
-  if(!sMref){ const sM=sigmaMCS(Ebk(ZREF+0.2)); sMref=z=>sM[Math.min(N-1,Math.max(0,Math.floor(z/DZ)))]; }
-  const sDS=z=>Math.sqrt(1.5*1.5+sMref(z)**2), sPBS=z=>Math.sqrt(sig*sig+sMref(z)**2);
-  const mDS=Math.round(1.65*sDS(12)), mPBS=Math.round(1.65*sPBS(12));
-  const Fds=elargie(F,mDS,0.2), Fpbs=elargie(F,mPBS,0.2);
-  let Mmax=0; XG.forEach(x=>{const t=Fds(x); if(t) Mmax=Math.max(Mmax,t.zd-t.zp);}); Mmax=Math.max(0.5,Math.ceil(Mmax*2)/2);
-  const TDS=gabarit(Mmax);
-  const ds=XG.map(x=>{const t=Fds(x); return t?colonne(TDS,ZREF-t.zd):ZG.map(()=>0);});
-  const pbs=XG.map(x=>{const t=Fpbs(x); if(!t) return ZG.map(()=>0); const M=Math.max(0.5,Math.ceil((t.zd-t.zp)*2)/2); return colonne(gabarit(M),ZREF-t.zd);});
-  const Dds=flou(ds,sDS), Dpbs=flou(pbs,sPBS);
-  C4={F,Fds,Mmax,mDS,mPBS,Dds,Dpbs,bDS:bilan(Dds,F),bPBS:bilan(Dpbs,F)};
-}
+let forme='ellipse', C4=null;
+function calcul4(){ C4=doseCarte(forme,+$('l5s4').value); }
 const GEO={z0:-3,z1:18,x0:-42,x1:42};
-function contourForme(F){ const b=[]; for(let x=-40;x<=40;x+=2){ const t=F(x); if(t) b.push([x,t]); } return b.map(([x,t])=>[+t.zd.toFixed(2),x]).concat(b.slice().reverse().map(([x,t])=>[+t.zp.toFixed(2),x])); }
 function tapVers(c){ const u=Math.floor(c/1000)/999, v=(c%1000)/999; return {z:GEO.z0+u*(GEO.z1-GEO.z0),x:GEO.x1-v*(GEO.x1-GEO.x0)}; }
 function surdose(z,x){ if(!C4) calcul4(); const ix=Math.round(x+40), iz=Math.round(z/0.1); if(ix<0||ix>=XG.length||iz<0||iz>=ZG.length) return false; const t=C4.F(XG[ix]), dedans=t&&ZG[iz]>=t.zp&&ZG[iz]<=t.zd; return !dedans&&C4.Dds[ix][iz]>=90; }
 let surdoseVisible=true;
@@ -1997,12 +2339,9 @@ const modB={id:'b',titre:'Double diffusion ou balayage ?',
      regler:()=>{ surdoseVisible=false; choisirForme('ellipse'); },apres:()=>{ surdoseVisible=true; modB.redessiner(); },
      corriger:vs=>{ forme='ellipse'; calcul4(); const ok={}; let best=null; Object.entries(vs).forEach(([id,v])=>{ const p=tapVers(v.c); if(surdose(p.z,p.x)){ ok[id]=1; if(!best||v.t<vs[best].t) best=id; } }); return {ok,best:best||''}; },
      e:'Le compensateur fait coller le bord distal et le collimateur le bord latéral, mais la modulation (roue) est la même partout, fixée par l\'épaisseur maximale : là où la cible est fine, le SOBP déborde vers l\'avant. Pas de conformation du bord proximal en DS (diapo 125).'},
-    {id:'2',type:'choix',titre:'Cible en coin',texte:'Cible en coin, double diffusion : quel accessoire supprimerait le surdosage proximal avec ce seul faisceau ?',
-     choix:['Un compensateur plus épais','Un collimateur plus serré','Aucun : rien ne conforme le bord proximal en DS'],r:2,regler:()=>{ surdoseVisible=true; choisirForme('coin'); },
-     e:'Compensateur : bord distal ; collimateur : bords latéraux. Pour le bord proximal, il faut combiner plusieurs faisceaux, ou passer au PBS où la modulation est choisie spot par spot.'},
-    {id:'3',type:'choix',titre:'Taille des spots',texte:'En PBS, on passe d\'un spot de σ = 3 mm à σ = 7 mm. Que se passe-t-il ?',
-     choix:['Rien, la modulation compense','Les bords latéraux s\'estompent : couverture moins bonne, ou marges plus larges','Le bord distal recule'],r:1,regler:()=>{ surdoseVisible=true; $('l5s4').value=3; choisirForme('ellipse'); },apres:()=>{ $('l5s4').value=7; modB.maj(); },
-     e:'Le bord latéral du PBS est fixé par la taille du spot : la pénombre latérale est moins bonne qu\'en DS (diapo 140), d\'autant plus que le spot grossit à basse énergie (diapo 128). D\'où les collimateurs dynamiques (trimmers).'},
+    {id:'2',type:'labo',sim:'dspbs',cfg:{forme:'ellipse',couv:95,sain:6},titre:'Faire mieux que la double diffusion',texte:'Même cible en ellipse. Choisis la <b>technique</b> et la <b>taille du spot</b> pour couvrir la cible (≥ 95 %) avec <b>moins de 6 cm²</b> de tissu sain surdosé.',
+     aff:'Balayage (PBS) avec un petit spot (σ ≈ 2 à 3 mm)',regler:()=>{ surdoseVisible=true; $('l5s4').value=6; choisirForme('ellipse'); },apres:()=>{ $('l5s4').value=2.5; modB.maj(); },
+     e:'En DS, la modulation est la même partout (fixée par l\'épaisseur maximale) : le SOBP déborde vers l\'avant là où la cible est fine, sans moyen de conformer le bord proximal (diapo 125). En PBS, chaque position a sa modulation ; mais le bord latéral dépend de la taille du spot : avec un gros spot, la pénombre s\'élargit et la couverture chute (diapo 140). D\'où les collimateurs dynamiques (trimmers).'},
   ],
   maj(){ $('l5s4o').textContent=fr(+$('l5s4').value,1)+' mm'; calcul4(); this.redessiner(); },
   init(){ seg('l5forme',v=>{ forme=v; this.maj(); }); $('l5s4').addEventListener('input',()=>this.maj()); $('l5sur').addEventListener('change',()=>this.redessiner()); observer(['cvDS','cvPBS'],()=>this.redessiner()); this.maj(); },
@@ -2027,16 +2366,7 @@ NIVEAUX.push({id:'L5',num:'5',court:'Mise en forme',titre:'Mise en forme du fais
 
 /* ===================== Level 6 : Mesures en protonthérapie ===================== */
 (function(){
-const REF=calcul('p',150,0.005);
 let det='ic', lat='lynx';
-const KB={ic:0,zebra:0,lynx:0.006,film:0.003};
-const Seff=z=>{ const u=Math.max(REF.R0-z,0.2), w=Math.pow(u/A,1/P); return Math.pow(w,1-P)/(P*A); };
-const lecture=(k,z)=>{ const i=Math.min(N-1,Math.max(0,Math.floor(z/DZ))); const q=1/(1+KB[k]*Seff(z)), q0=1/(1+KB[k]*Seff(0)); return REF.D[i]*q/q0; };
-const SIG=3.5, DEC=2;
-const prof=x=>Math.exp(-0.5*((x-DEC)/SIG)**2);
-function echant(pas,diam){ const pts=[]; for(let x=-30;x<=30+1e-9;x+=pas){ let a=0,n=0; for(let u=-diam/2;u<=diam/2+1e-9;u+=Math.max(0.1,diam/10)){ a+=prof(x+u); n++; } pts.push([x,a/n]); } return pts; }
-function sigmaMoments(pts){ let s=0,m=0,m2=0; pts.forEach(([x,v])=>{ s+=v; m+=v*x; m2+=v*x*x; }); m/=s; return Math.sqrt(Math.max(0,m2/s-m*m)); }
-const NOMS={ic:'Grande chambre plate (StingRay)',zebra:'Zebra (180 chambres, pas de 2 mm)',lynx:'Scintillateur (Lynx PT)',film:'Film'};
 const mod={id:'a',titre:'Le bon détecteur',
   html:`<div class="titre-graphe"><h3>Chaque mesure son détecteur</h3><span class="note">Protons de 150 MeV : dose réelle (gris) et lecture du détecteur (orange).</span></div>
     <div class="cmd"><div class="seg" id="l6det"><button type="button" data-v="ic" class="actif">Chambre plate StingRay</button><button type="button" data-v="zebra">Zebra</button><button type="button" data-v="lynx">Scintillateur Lynx</button><button type="button" data-v="film">Film</button></div></div>
@@ -2045,16 +2375,17 @@ const mod={id:'a',titre:'Le bon détecteur',
     <div class="graphe g2"><canvas id="cvSpot" aria-label="Profil latéral d'un spot mesuré"></canvas><div class="info" id="l6info2"></div></div>
     <div class="chips" id="l6chips"></div>`,
   sources:'Diapos 151-166 : calorimétrie (graphite ≈ 1,4 mK/Gy, eau ≈ 0,24 mK/Gy), coupe de Faraday (fluence), chambres plates (PPC05, StingRay Ø 12 cm), Zebra (180 chambres espacées de 2 mm), Lynx PT (0,5 mm, quenching), MatriXX (1020 chambres, 7,6 mm). Sous-réponse au fort TEL modélisée par une loi de Birks illustrative (kB·S) : ordre de grandeur seulement. Spot gaussien σ = 3,5 mm décentré de 2 mm ; chambres de la MatriXX moyennées sur 4,5 mm.'+SRC_PEDA,
+  consigne:'Sur son téléphone, chacun règle la simulation et voit le résultat en direct, puis valide. Le plus rapide parmi les bonnes réponses gagne le bonus.',
   manches:[
-    {id:'1',type:'choix',titre:'Rendement de référence',texte:'Pour mesurer le <b>rendement en profondeur de référence</b> d\'un faisceau balayé, quel détecteur choisir ?',
-     choix:['Le scintillateur Lynx PT','Une grande chambre plate (StingRay)','La MatriXX','Une coupe de Faraday'],r:1,regler:()=>{ det='lynx'; segVal('l6det','lynx'); mod.redessiner(); },apres:()=>{ det='ic'; segVal('l6det','ic'); mod.redessiner(); },
-     e:'Chambre d\'ionisation plate de grand diamètre (12 cm, intègre tout le faisceau), cavité fine (1 mm, bonne résolution en profondeur), réponse indépendante du TEL. Le scintillateur sous-répond au pic (quenching) ; la coupe de Faraday mesure une fluence.'},
-    {id:'2',type:'estim',titre:'Calorimètre à eau',texte:'Calorimètre à eau, mesure de référence absolue : de combien la température monte-t-elle pour <b>1 Gy</b> ?',min:0.001,max:100,log:true,def:1,unite:'mK',r:0.24,
-     juste:v=>v>=0.16&&v<=0.36,ecart:v=>Math.abs(Math.log(v/0.24)),bande:[0.16,0.36],aff:'≈ 0,24 mK',
-     e:'ΔT = D/c : 1 Gy = 1 J/kg et c ≈ 4180 J/(kg·K), d\'où 0,24 mK (graphite : ≈ 1,4 mK/Gy). D\'où une méthodologie longue et délicate, réservée aux laboratoires primaires ; en routine, chambre d\'ionisation selon le TRS-398.'},
-    {id:'3',type:'choix',titre:'Taille des spots',texte:'Pour contrôler la <b>taille et la position des spots</b> (CQ hebdomadaire et mensuel), quel détecteur ?',
-     choix:['La MatriXX','Le scintillateur Lynx PT','Le Zebra','Une chambre PPC05'],r:1,regler:()=>{ lat='matrixx'; segVal('l6lat','matrixx'); mod.redessiner(); },apres:()=>{ lat='lynx'; segVal('l6lat','lynx'); mod.redessiner(); },
-     e:'Résolution de 0,5 mm, distorsion &lt; 0,3 mm : le détecteur de référence des pencil beams (mesures relatives 2D). Avec des chambres tous les 7,6 mm, la MatriXX décrit mal un spot de quelques mm ; elle sert aux champs (CQ quotidien, CQ patient).'},
+    {id:'1',type:'labo',sim:'detecteur',cfg:{},titre:'Rendement de référence',texte:'Mesure le <b>rendement en profondeur de référence</b> d\'un faisceau balayé : choisis le détecteur qui donne la bonne dose, y compris au pic.',
+     aff:'Grande chambre plate (StingRay)',regler:()=>{ det='lynx'; segVal('l6det','lynx'); mod.redessiner(); },apres:()=>{ det='ic'; segVal('l6det','ic'); mod.redessiner(); },
+     e:'Chambre d\'ionisation plate de grand diamètre (12 cm, intègre tout le faisceau), cavité fine (bonne résolution en profondeur), réponse indépendante du TEL. Le scintillateur et le film sous-répondent au pic (quenching) ; le Zebra (une chambre tous les 2 mm) sert au CQ rapide du parcours.'},
+    {id:'2',type:'labo',sim:'calo',cfg:{mil:'eau',dT:1},titre:'Calorimètre à eau',texte:'Calorimètre à eau, mesure de référence absolue : quelle <b>dose</b> faut-il pour chauffer l\'<b>eau</b> de <b>1 mK</b> ?',
+     aff:'≈ 4,2 Gy (0,24 mK par Gy)',
+     e:'ΔT = D / c : 1 Gy = 1 J/kg et c ≈ 4180 J/(kg·K), soit 0,24 mK par gray (graphite : ≈ 1,4 mK/Gy, chaleur massique plus faible). Il faut mesurer des millièmes de degré : méthode délicate, réservée aux laboratoires primaires ; en routine, chambre d\'ionisation selon le TRS-398.'},
+    {id:'3',type:'labo',sim:'spotdet',cfg:{},titre:'Taille des spots',texte:'Mesure la <b>taille d\'un spot</b> (σ réel 3,5 mm) à 0,1 mm près : quel détecteur ?',
+     aff:'Lynx PT (résolution 0,5 mm)',regler:()=>{ lat='matrixx'; segVal('l6lat','matrixx'); mod.redessiner(); },apres:()=>{ lat='lynx'; segVal('l6lat','lynx'); mod.redessiner(); },
+     e:'Résolution de 0,5 mm, distorsion &lt; 0,3 mm : le détecteur de référence des pencil beams. Avec des chambres tous les 7,6 mm, la MatriXX décrit mal un spot de quelques mm ; elle sert aux champs (CQ quotidien, CQ patient).'},
   ],
   init(){ seg('l6det',v=>{ det=v; this.redessiner(); }); seg('l6lat',v=>{ lat=v; this.redessiner(); }); observer(['cvDet','cvSpot'],()=>this.redessiner()); },
   redessiner(){
@@ -2097,16 +2428,13 @@ NIVEAUX.push({id:'L6',num:'6',court:'Mesures',titre:'Mesures en protonthérapie'
 (function(){
 /* ---------- Module A : courbes de survie, EBR et effet oxygène ---------- */
 let rad='c';
-const BX=0.05;
-function paramRad(k,ab,L){ const ax=ab*BX;
-  if(k==='pp'||k==='pf'){ const LL=k==='pp'?1:L, mx=0.99064+0.35605/ab*LL, mn=1.1012-0.0038703*Math.sqrt(ab)*LL; return {a:ax*mx,b:BX*mn*mn,oer:k==='pp'?2.8:2.6}; }
-  return {a:ax*(1+16/ab),b:BX,oer:1.7}; }
-const doseSurv=(a,b,lnS)=>{const y=-lnS; return b>1e-9?(-a+Math.sqrt(a*a+4*b*y))/(2*b):y/a;};
 function etat(){ const ab=+$('l7ab').value, lv=+$('l7niv').value, L=+$('l7let').value, lnS=lv*Math.LN10;
   const X={a:ab*BX,b:BX,oer:2.8}, R=paramRad(rad,ab,L), Dx=doseSurv(X.a,X.b,lnS), Dr=doseSurv(R.a,R.b,lnS);
   return {ab,lv,L,X,R,Dx,Dr,rbe:Dx/Dr,DxH:Dx*X.oer,DrH:Dr*R.oer}; }
 const rbeC10=(()=>{ const X={a:0.15,b:BX}, R=paramRad('c',3,0), l=-Math.LN10; return doseSurv(X.a,X.b,l)/doseSurv(R.a,R.b,l); })();
 function reglerA(o){ if(o.r){ rad=o.r; segVal('l7rad',o.r); } ['ab','niv','let'].forEach(k=>{ if(o[k]!=null) $('l7'+k).value=o[k]; }); if(o.hyp!=null) $('l7hyp').checked=o.hyp; modA.redessiner(); }
+/* réponse d'une manche de survie : doses photons / carbone et leur rapport */
+function affSurvie(niv,hyp){ const X={a:3*BX,b:BX,oer:2.8}, R=paramRad('c',3,0), l=niv*Math.LN10; let dx=doseSurv(X.a,X.b,l), dr=doseSurv(R.a,R.b,l); if(hyp){ dx*=X.oer; dr*=R.oer; } return fr(dx,1)+' Gy / '+fr(dr,1)+' Gy, rapport ≈ '+fr(dx/dr,1); }
 const modA={id:'a',titre:'Survie : EBR et effet oxygène',
   html:`<div class="titre-graphe"><h3>Courbes de survie : EBR et effet oxygène</h3>
       <div class="seg" id="l7rad"><button type="button" data-v="pp">Protons, plateau</button><button type="button" data-v="pf">Protons, fin de parcours</button><button type="button" data-v="c" class="actif">Carbone, pic de Bragg</button></div>
@@ -2121,15 +2449,16 @@ const modA={id:'a',titre:'Survie : EBR et effet oxygène',
       <div class="curseur"><label for="l7let"><span>TEL des protons (fin de parcours)</span> <output id="l7leto"></output></label><input type="range" id="l7let" min="1" max="15" step="0.5" value="8"></div>
     </div>`,
   sources:'Modèle linéaire-quadratique S = exp(−αD − βD²) (diapo 173), β<sub>x</sub> = 0,05 Gy⁻². Protons : McNamara et al. 2015 (diapo 177). Carbone : paramètres <b>illustratifs</b> (α × (1 + 16/(α/β))), donnant une EBR de 2 à 3 ; ce n\'est ni le LEM ni le MKM. OER : 2,8 pour photons et protons (diapo 183 : 2,5-3), ≈ 1,7 pour le carbone au pic (ordre de grandeur).'+SRC_PEDA,
+  consigne:'Sur son téléphone, chacun règle la simulation et voit le résultat en direct, puis valide. Le plus rapide parmi les bonnes réponses gagne le bonus.',
   manches:[
-    {id:'1',type:'estim',titre:'Lire l\'EBR sur le graphe',masque:true,texte:'Lisez sur l\'écran les doses donnant <b>10 % de survie</b> (photons et carbone au pic, α/β = 3 Gy). Quelle est l\'<b>EBR</b> du carbone ?',min:0.5,max:5,pas:0.05,dec:2,def:1,unite:'',
-     r:rbeC10,tol:0.3,aff:'EBR ≈ '+fr(rbeC10,1)+' ('+fr(doseSurv(0.15,BX,-Math.LN10),1)+' Gy / '+fr(doseSurv(paramRad('c',3,0).a,BX,-Math.LN10),1)+' Gy)',regler:()=>reglerA({r:'c',ab:3,niv:-1,hyp:false}),
-     e:'EBR = D<sub>photons</sub> / D<sub>ions</sub> à effet égal : on trace l\'horizontale à 10 % et on fait le rapport des doses. Ce n\'est pas un rapport de survies à dose égale.'},
-    {id:'2',type:'choix',titre:'EBR et niveau de dose',texte:'Même carbone. On compare maintenant à <b>1 % de survie</b> (dose plus forte). L\'EBR est…',
-     choix:['plus élevée qu\'à 10 %','identique','plus faible qu\'à 10 %'],r:2,regler:()=>reglerA({r:'c',ab:3,niv:-1,hyp:false}),apres:()=>reglerA({niv:-2}),
+    {id:'1',type:'labo',sim:'survie',cfg:{niv:-1,ab:3},masque:true,titre:'L\'EBR à 10 % de survie',texte:'Règle les deux doses pour obtenir <b>10 % de survie</b> avec les photons et avec le carbone (α/β = 3 Gy). Le rapport des deux doses est l\'EBR.',
+     aff:affSurvie(-1,false),regler:()=>reglerA({r:'c',ab:3,niv:-1,hyp:false}),
+     e:'EBR = D<sub>photons</sub> / D<sub>ions</sub> à effet égal : on se place à la même survie et on fait le rapport des doses. Ce n\'est pas un rapport de survies à dose égale.'},
+    {id:'2',type:'labo',sim:'survie',cfg:{niv:-2,ab:3},masque:true,titre:'Et à 1 % de survie ?',texte:'Même chose pour <b>1 % de survie</b> (doses plus fortes). L\'EBR est-elle plus grande ou plus petite qu\'à 10 % ?',
+     aff:affSurvie(-2,false)+' : plus faible qu\'à 10 %',regler:()=>reglerA({r:'c',ab:3,niv:-1,hyp:false}),apres:()=>reglerA({niv:-2}),
      e:'Les photons ont un épaulement (terme β) que les ions de haut TEL n\'ont presque pas : l\'écart relatif est maximal à faible dose. L\'EBR est plus élevée à faible dose par fraction (diapo 178), voir la courbe du bas.'},
-    {id:'3',type:'choix',titre:'Cellules hypoxiques',texte:'Cellules <b>hypoxiques</b> : l\'OER du carbone au pic de Bragg, comparé à celui des photons, est…',
-     choix:['plus élevé','identique','plus faible'],r:2,regler:()=>reglerA({r:'c',ab:3,niv:-1,hyp:false}),apres:()=>reglerA({hyp:true}),
+    {id:'3',type:'labo',sim:'survie',cfg:{niv:-1,ab:3,hyp:true},masque:true,titre:'Cellules hypoxiques',texte:'Cellules <b>hypoxiques</b> : règle les doses pour 10 % de survie. Que devient l\'écart entre photons et carbone ?',
+     aff:affSurvie(-1,true)+' : l\'écart se creuse',regler:()=>reglerA({r:'c',ab:3,niv:-1,hyp:false}),apres:()=>reglerA({hyp:true}),
      e:'OER ≈ 2,5 à 3 pour les rayons X et les protons, nettement moins pour les ions lourds : les dégâts directs de haut TEL dépendent moins de l\'oxygène. D\'où l\'intérêt du carbone pour les tumeurs hypoxiques, radiorésistantes (diapo 183).'},
   ],
   init(){ seg('l7rad',v=>{ rad=v; this.redessiner(); }); ['l7ab','l7niv','l7let'].forEach(n=>$(n).addEventListener('input',()=>this.redessiner())); $('l7hyp').addEventListener('change',()=>this.redessiner()); observer(['cvSurv','cvRbeD'],()=>this.redessiner()); },
@@ -2166,26 +2495,8 @@ const modA={id:'a',titre:'Survie : EBR et effet oxygène',
 };
 /* ---------- Module B : EBR variable le long du SOBP ---------- */
 const ZP=10, ZD=15, OAR=[15.2,17];
-let base=null, cB=null;
-function letd(S){ const zs=[]; for(let z=0;z<=19.0001;z+=0.05) zs.push(z);
-  const num=new Float64Array(zs.length), den=new Float64Array(zs.length);
-  const a=1/P-1, k=1/(P*Math.pow(A,1/P))/10;
-  const I1=(u1,u2)=>k*(Math.pow(u2,a+1)-Math.pow(u1,a+1))/(a+1), I2=(u1,u2)=>k*k*(Math.pow(u2,2*a+1)-Math.pow(u1,2*a+1))/(2*a+1);
-  S.pics.forEach((pk,j)=>{ const R=S.L[j]+OFFS.p, sg=Math.sqrt((0.012*Math.pow(R,0.935))**2+(P*R*0.005)**2), nb=80, h=8*sg/nb;
-    zs.forEach((z,kz)=>{ let s1=0,s2=0;
-      for(let q=0;q<nb;q++){ const r1=R-4*sg+q*h, r2=r1+h; if(r2<=z) continue; const gq=Math.exp(-0.5*((r1+h/2-R)/sg)**2), u1=Math.max(0,r1-z), u2=r2-z; s1+=gq*I1(u1,u2); s2+=gq*I2(u1,u2); }
-      if(s1>0){ const d=S.w[j]*pk.raw[Math.min(N-1,Math.round(z/DZ))]; num[kz]+=d*s2/s1; den[kz]+=d; } }); });
-  return {zs,L:zs.map((_,k)=>den[k]>0?num[k]/den[k]:0)}; }
-function calculB(){
-  if(!base){ const S=sobp(ZP,ZD,4,'opt'); base={S,LT:letd(S)}; }
-  const ab=+$('l7ab2').value, dRx=+$('l7dfx').value, dphys=dRx/1.1, {S,LT}=base, zs=LT.zs;
-  const Dp=zs.map(z=>S.tot[Math.min(N-1,Math.round(z/DZ))]/100*dphys);
-  const R=zs.map((z,k)=>Dp[k]>0.005?rbeMcN(Dp[k],LT.L[k],ab):NaN), Db=Dp.map((d,k)=>isNaN(R[k])?0:d*R[k]);
-  const moy=(f,a,b)=>{let s=0,n=0; zs.forEach((z,k)=>{if(z>=a&&z<=b&&!isNaN(f[k])){s+=f[k];n++;}}); return s/n;};
-  const mx=(f,a,b)=>{let m=0; zs.forEach((z,k)=>{if(z>=a&&z<=b&&f[k]>m) m=f[k];}); return m;};
-  const r80=f=>{ const ref=0.8*moy(f,ZP+0.5,ZD-0.5); for(let k=zs.length-1;k>0;k--) if(zs[k]>ZP&&f[k-1]>=ref) return zs[k]; return NaN; };
-  cB={zs,Dp,Db,R,L:LT.L,dRx,ab,rbeEnt:moy(R,0.5,2),rbeMil:moy(R,ZP,ZP+2.5),rbeFin:moy(R,ZD-0.5,ZD),oar11:1.1*mx(Dp,OAR[0],OAR[1]),oarV:mx(Db,OAR[0],OAR[1]),dR80:(r80(Db)-r80(Dp.map(d=>d*1.1)))*10};
-}
+let cB=null;
+function calculB(){ cB=ebrProfil(+$('l7ab2').value,+$('l7dfx').value); }
 function reglerB(ab,d){ $('l7ab2').value=ab; $('l7dfx').value=d; modB.maj(); }
 const modB={id:'b',titre:'EBR le long du SOBP',
   html:`<div class="titre-graphe"><h3>Protons : EBR = 1,1 partout, ou variable ?</h3><span class="note">SOBP de 10 à 15 cm, organe à risque juste derrière. EBR variable : modèle de McNamara et al. (2015).</span></div>
@@ -2197,12 +2508,13 @@ const modB={id:'b',titre:'EBR le long du SOBP',
       <div class="options"><label><input type="checkbox" id="l7c11" checked> Dose × 1,1</label></div>
     </div>`,
   sources:'TEL moyen en dose des protons primaires (secondaires ignorés). EBR : McNamara, Schuemann et Paganetti, PMB 60 (2015) 8399 (diapo 177), un modèle parmi d\'autres, avec une forte disparité entre modèles (Rørvik et al. 2018, diapo 180). Ordres de grandeur de la diapo 179 : 1,1 à l\'entrée, 1,15 au centre, 1,35 au bord distal, 1,7 dans la chute.'+SRC_PEDA,
+  consigne:'Sur son téléphone, chacun règle la simulation et voit le résultat en direct, puis valide. Le plus rapide parmi les bonnes réponses gagne le bonus.',
   manches:[
-    {id:'1',type:'choix',titre:'Où l\'EBR est-elle maximale ?',texte:'Avec une EBR variable (α/β = 2 Gy, 2 Gy par fraction), où l\'EBR est-elle la plus élevée ?',choix:['À l\'entrée du faisceau','Au milieu du SOBP','À la fin du SOBP et dans la chute distale'],r:2,regler:()=>reglerB(2,2),
-     e:'Le TEL augmente en fin de parcours, donc l\'EBR aussi : ordres de grandeur 1,1 à l\'entrée, 1,15 au centre, 1,35 au bord distal et 1,7 dans la chute distale (diapo 179).'},
-    {id:'2',type:'choix',titre:'Et l\'organe à risque ?',texte:'Conséquence pour l\'organe à risque situé juste derrière la cible ?',choix:['Aucune, l\'EBR n\'agit que dans la cible','Il reçoit une dose biologique plus forte que prévu, et le bord distal biologique avance vers lui','Il est mieux protégé, car l\'EBR diminue au-delà du pic'],r:1,regler:()=>reglerB(2,2),
-     e:'Ici la dose maximale à l\'OAR passe d\'environ 1,4 Gy (1,1) à 2,5 Gy (EBR variable). Règle du cours : ne pas finir un faisceau dans un OAR (diapos 181-182) ; cela s\'ajoute à l\'incertitude de parcours (level 8).'},
-    {id:'3',type:'choix',titre:'Hypofractionnement',texte:'On passe de 2 Gy à <b>8 Gy par fraction</b>. L\'EBR…',choix:['augmente','diminue','ne change pas'],r:1,regler:()=>reglerB(2,2),apres:()=>reglerB(2,8),
+    {id:'1',type:'labo',sim:'ebrsobp',cfg:{but:'haut',seuil:1.55},titre:'Faire grimper l\'EBR',texte:'Trouve un réglage (α/β du tissu, dose par fraction) où l\'<b>EBR en fin de SOBP</b> dépasse <b>1,55</b>.',
+     aff:'α/β faible et petite dose par fraction (ex. α/β = 1 Gy, 1 Gy par fraction)',regler:()=>reglerB(6,3),apres:()=>reglerB(1,1),
+     e:'Le TEL augmente en fin de parcours, donc l\'EBR aussi : ordres de grandeur 1,1 à l\'entrée, 1,15 au centre, 1,35 au bord distal, 1,7 dans la chute (diapo 179). L\'effet est plus fort pour les α/β faibles (tissus tardifs) et à faible dose par fraction. Un OAR juste derrière la cible reçoit donc plus de dose biologique que prévu : ne pas finir un faisceau dans un OAR (diapos 181-182).'},
+    {id:'2',type:'labo',sim:'ebrsobp',cfg:{but:'hypo',ab:2,seuil:1.3,dmax:4.2},titre:'Hypofractionnement',texte:'Tissu à <b>α/β = 2 Gy</b> : à partir de quelle <b>dose par fraction</b> l\'EBR en fin de SOBP passe-t-elle sous <b>1,3</b> ?',
+     aff:'≈ 3,8 Gy par fraction',regler:()=>reglerB(2,2),apres:()=>reglerB(2,3.8),
      e:'L\'EBR est plus élevée à faible dose par fraction (diapo 178), surtout pour les α/β faibles. Le 1,1 consensuel (ICRU 78) correspond à ≈ 2 Gy par fraction.'},
   ],
   maj(){ calculB(); this.redessiner(); },
@@ -2253,31 +2565,9 @@ NIVEAUX.push({id:'L7',num:'7',court:'Biologie',titre:'Propriétés biologiques d
 /* ===================== Level 8 : Planification de traitement ===================== */
 (function(){
 /* ---------- Module A : incertitude de parcours et marges ---------- */
-const CTV=[10,14], OAR=[14.5,16.5], ZM=20;
-const TISSUS=[{a:0,b:1,nom:'tissu',spr:1.04},{a:1,b:2.5,nom:'os',spr:1.5},{a:2.5,b:20,nom:'tissu',spr:1.04}];
-const IMPL={a:3,b:7,plan:1.08,reel:0.94};
-const cacheS=new Map();
-function wet(z,impl,mode,fac){ let w=0; const pas=0.01;
-  for(let x=0;x<z-1e-9;x+=pas){ const xm=x+pas/2; let spr=TISSUS.find(t=>xm>=t.a&&xm<t.b).spr; if(impl&&xm>=IMPL.a&&xm<IMPL.b) spr=mode==='reel'?IMPL.reel:IMPL.plan; w+=spr*fac*Math.min(pas,z-x); }
-  return w; }
-const ZS=[]; for(let z=0;z<=ZM+1e-9;z+=0.05) ZS.push(+z.toFixed(2));
-function scenario(eps,mmm,impl,u){
-  const m=mmm/10, Wp=ZS.map(z=>wet(z,impl,'plan',1)), Wr=ZS.map(z=>wet(z,impl,'reel',1+eps));
-  const a=wet(CTV[0]-m,impl,'plan',1), b=wet(CTV[1]+m,impl,'plan',1), key=a.toFixed(2)+'-'+b.toFixed(2);
-  if(!cacheS.has(key)) cacheS.set(key,sobp(a,b,4,'opt').tot);
-  const T=cacheS.get(key), Dw=w=>{ const i=Math.round(w/DZ); return i<N?T[i]:0; };
-  const Dplan=Wp.map(Dw), Dreel=Wr.map(Dw);
-  let bmin=null,bmax=null;
-  if(u>0){ const W1=ZS.map(z=>wet(z,impl,'plan',1-u)).map(Dw), W2=ZS.map(z=>wet(z,impl,'plan',1+u)).map(Dw); bmin=W1.map((v,k)=>Math.min(v,W2[k],Dplan[k])); bmax=W1.map((v,k)=>Math.max(v,W2[k],Dplan[k])); }
-  const dans=(f,ab,op)=>{ let n=0,t=0,mx=0,mn=1e9; ZS.forEach((z,k)=>{ if(z>=ab[0]&&z<=ab[1]){ t++; if(f[k]>=95) n++; mx=Math.max(mx,f[k]); mn=Math.min(mn,f[k]); } }); return op==='cov'?100*n/t:op==='min'?mn:mx; };
-  const r80=f=>{ for(let k=ZS.length-1;k>0;k--) if(f[k-1]>=80) return ZS[k]; return NaN; };
-  return {Dplan,Dreel,bmin,bmax,cov:dans(Dreel,CTV,'cov'),min:dans(Dreel,CTV,'min'),oar:dans(Dreel,OAR,'max'),oarPlan:dans(Dplan,OAR,'max'),
-    covW:bmin?dans(bmin,CTV,'cov'):null,oarW:bmax?dans(bmax,OAR,'max'):null,shift:(r80(Dreel)-r80(Dplan))*10,regle:0.035*wet(CTV[1],impl,'plan',1)*10+1};
-}
 let cA=null, voirReel=true;
 function reglerA(o){ ['eps','marge','unc'].forEach(k=>{ if(o[k]!=null) $('l8'+k).value=o[k]; }); if(o.impl!=null) $('l8impl').checked=o.impl; voirReel=o.reel!==false; modA.maj(); }
 const modA={id:'a',titre:'Marges de parcours',
-  consigne:'Ouvrez une manche, lancez-la sur les téléphones, puis révélez la réponse : le graphique montre alors la dose réellement délivrée.',
   html:`<div class="titre-graphe"><h3>Incertitude de parcours et marges</h3><span class="note">Un faisceau, une cible de 10 à 14 cm, un organe à risque derrière. Tirets : dose prévue par le TPS. Trait plein : dose réellement délivrée.</span></div>
     <div class="graphe"><canvas id="cvPar" aria-label="Dose prévue et dose réelle"></canvas><div class="info" id="l8info"></div></div>
     <div class="cmd">
@@ -2287,17 +2577,17 @@ const modA={id:'a',titre:'Marges de parcours',
       <div class="options"><label><input type="checkbox" id="l8impl"> Implant (SECT 1,08 ; réel 0,94)</label><label><input type="checkbox" id="l8bande" checked> Bande robuste</label></div>
     </div>`,
   sources:'Profondeur équivalent-eau = ∫ SPR dz ; tissu 1,04, os 1,5, implant 1,08 au TPS (SECT) et 0,94 en réalité (diapo 191, écart de 15 %). Règle de marge : 3,5 % du parcours + 1 mm (Goitein 1985 ; 2,5-3,5 % + 1-3 mm selon les centres, diapo 192). 1D, sans mouvement ni positionnement.'+SRC_PEDA,
+  consigne:'Sur son téléphone, chacun règle la simulation et voit le résultat en direct, puis valide. Le plus rapide parmi les bonnes réponses gagne le bonus.',
   manches:[
-    {id:'1',type:'estim',titre:'La règle des 3,5 % + 1 mm',texte:'Règle usuelle : marge = <b>3,5 % du parcours + 1 mm</b>. Quelle marge pour un parcours de <b>15 cm</b> ?',min:0,max:20,pas:0.25,dec:2,def:3,unite:'mm',r:6.25,tol:0.5,aff:'≈ 6 mm (0,035 × 150 + 1)',
-     regler:()=>reglerA({eps:0,marge:0,unc:3.5,impl:false}),apres:()=>reglerA({marge:6}),
-     e:'0,035 × 150 mm + 1 mm ≈ 6,25 mm. Le % couvre l\'incertitude sur la conversion UH → SPR, proportionnelle à la profondeur ; le mm couvre ce qui n\'en dépend pas (résolution du scanner, calcul de dose, reproductibilité).'},
-    {id:'2',type:'choix',titre:'SPR sous-estimés, sans marge',masque:true,texte:'Les SPR réels du patient sont <b>3 % plus élevés</b> que ceux du TPS. <b>Sans marge</b>, que se passe-t-il ?',
-     choix:['Les protons s\'arrêtent ≈ 4 mm trop tôt : le bord distal de la cible est sous-dosé','L\'organe à risque derrière la cible reçoit plus de dose','Rien : l\'écart est trop faible','La dose à l\'entrée augmente fortement'],r:0,
-     regler:()=>reglerA({eps:0,marge:0,unc:0,impl:false,reel:false}),apres:()=>reglerA({eps:3,marge:0,unc:0,impl:false}),
-     e:'SPR plus élevés = parcours plus court : le pic recule vers l\'entrée et le bord distal de la cible n\'est plus couvert. C\'est ce que compense la marge (3,5 % + 1 mm) ; elle protège la cible, pas l\'OAR situé derrière : pour lui, il faut jouer sur la balistique.'},
-    {id:'3',type:'estim',titre:'L\'implant mammaire',masque:true,texte:'Un implant de <b>4 cm</b> est vu à <b>1,08</b> par le scanner simple énergie, alors que sa vraie valeur est <b>0,94</b> (DECT). De combien le bord distal se décale-t-il ?',min:0,max:15,pas:0.1,dec:1,def:2,unite:'mm',r:5.6,tol:1,aff:'≈ 5,6 mm plus loin que prévu',
-     regler:()=>reglerA({eps:0,marge:0,unc:0,impl:true,reel:false}),apres:()=>reglerA({eps:0,marge:0,unc:0,impl:true}),
-     e:'4 cm × (1,08 − 0,94) ≈ 0,56 cm d\'eau : le TPS croit que l\'implant freine plus qu\'en réalité, le faisceau va ≈ 5,6 mm trop loin. La diapo 191 rapporte une erreur d\'isodose de 7 mm sur un cas réel. D\'où l\'intérêt du scanner double énergie (DECT).'},
+    {id:'1',type:'labo',sim:'marge',cfg:{eps:3,mmax:5},titre:'SPR sous-estimés',texte:'Les SPR réels du patient sont <b>3 % plus élevés</b> que ceux du TPS. Règle cette erreur, puis trouve la <b>plus petite marge</b> qui couvre encore toute la cible.',
+     aff:'≈ 4,5 mm',regler:()=>reglerA({eps:0,marge:0,unc:0,impl:false}),apres:()=>reglerA({eps:3,marge:4.5,unc:0,impl:false}),
+     e:'SPR plus élevés = parcours plus court : sans marge, le bord distal de la cible est sous-dosé. La marge protège la cible, pas l\'OAR situé derrière : sa dose monte quand la marge grandit. Pour lui, il faut jouer sur la balistique.'},
+    {id:'2',type:'labo',sim:'margeRob',cfg:{mode:'robuste',mmax:5.5},titre:'Évaluation robuste',texte:'On ne connaît pas l\'erreur : elle peut aller de <b>−3,5 % à +3,5 %</b>. Trouve la plus petite marge qui couvre la cible <b>dans tous les cas</b>.',
+     aff:'≈ 5 mm (règle 3,5 % + 1 mm : ≈ 6 mm pour 15 cm)',regler:()=>reglerA({eps:0,marge:0,unc:3.5,impl:false}),apres:()=>reglerA({eps:0,marge:5,unc:3.5,impl:false}),
+     e:'La règle usuelle, 3,5 % du parcours + 1 mm, couvre l\'incertitude de conversion UH → SPR (proportionnelle au parcours) et ce qui n\'en dépend pas. En clinique, l\'optimisation robuste teste ces scénarios d\'erreur (3 % / 3 mm au crâne, diapo 195).'},
+    {id:'3',type:'labo',sim:'margeImpl',cfg:{mode:'implant'},titre:'L\'implant mammaire',texte:'Un implant de 4 cm est sur le trajet. Choisis la <b>conversion des SPR</b> et la <b>marge</b> pour couvrir la cible (≥ 98 %) avec <b>au plus 50 %</b> de la dose à l\'OAR.',
+     aff:'Scanner double énergie (DECT), marge ≤ 2 mm',regler:()=>reglerA({eps:0,marge:0,unc:0,impl:true,reel:false}),apres:()=>reglerA({eps:0,marge:0,unc:0,impl:true}),
+     e:'Le scanner simple énergie voit l\'implant à 1,08 alors que son SPR vaut 0,94 : 4 cm × 0,14 ≈ 0,56 cm d\'eau, le faisceau va ≈ 5,6 mm trop loin, dans l\'OAR, et aucune marge ne le corrige. Le DECT donne le bon SPR (diapo 191 : erreur d\'isodose de 7 mm sur un cas réel).'},
   ],
   maj(){ cA=scenario(+$('l8eps').value/100,+$('l8marge').value,$('l8impl').checked,+$('l8unc').value/100); this.redessiner(); },
   init(){ ['l8eps','l8marge','l8unc'].forEach(n=>$(n).addEventListener('input',()=>{ voirReel=true; this.maj(); })); ['l8impl','l8bande'].forEach(n=>$(n).addEventListener('change',()=>{ voirReel=true; this.maj(); })); observer(['cvPar'],()=>this.redessiner()); this.maj(); },
@@ -2385,7 +2675,7 @@ NIVEAUX.push({id:'L10',num:'10',court:'Neutrons',titre:'Cas particulier des neut
 ]});
 })();
 
-if(/[?&]eleve(&|=|$)/.test(location.search)){ eleveApp(); } else { demarrerProf(); }
+if(/[?&](eleve|e)(&|=|$)/.test(location.search)){ eleveApp(); } else { demarrerProf(); }
 })();
 </script>
 </body>
