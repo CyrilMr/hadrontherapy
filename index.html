@@ -272,6 +272,13 @@ body.eleve{display:block;overflow:auto;height:auto;min-height:100%;font-size:18p
 .el-chrono{height:8px;border-radius:4px;background:var(--grille);overflow:hidden;margin:4px 0 10px;}
 .el-chrono i{display:block;height:100%;background:var(--dose);transition:width 1s linear;}
 .el-pied{position:sticky;bottom:0;background:var(--panneau);border-top:1px solid var(--trait);padding:8px 14px;}
+.el-cl-t{font-size:22px;margin:2px 0 10px;}
+.el-cl{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;}
+.el-cl li{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:var(--panneau);border:1px solid var(--trait);font-size:17px;}
+.el-cl li .r{min-width:2em;text-align:center;font-variant-numeric:tabular-nums;color:var(--texte-2);}
+.el-cl li .n{flex:1;} .el-cl li .p{font-variant-numeric:tabular-nums;color:var(--texte-2);}
+.el-cl li.moi{background:#FFC24D;border-color:#FFC24D;color:#0C1A2B;font-weight:800;font-size:20px;padding:12px;}
+.el-cl li.moi .r,.el-cl li.moi .p{color:#0C1A2B;}
 .el-rang{font-size:18px;text-align:center;} .el-rang b{font-size:24px;}
 .el-voisins{display:flex;justify-content:space-between;font-size:14px;color:var(--texte-2);margin-top:2px;gap:8px;}
 .el-cv{position:relative;width:100%;aspect-ratio:1.5;border-radius:12px;border:1px solid var(--trait);background:var(--panneau);overflow:hidden;}
@@ -302,6 +309,7 @@ body.eleve{display:block;overflow:auto;height:auto;min-height:100%;font-size:18p
 .el-choix button{background:var(--panneau);color:var(--texte);border:2px solid var(--trait);}
 .el-choix button .forme{background:var(--panneau-2);color:var(--texte-2);}
 .el-choix button.moi{border-color:var(--choix);}
+.el-choix button.sel{border-color:var(--choix);border-width:3px;background:color-mix(in srgb,var(--choix) 14%,var(--panneau));}
 </style>
 </head>
 <body>
@@ -631,7 +639,7 @@ function eleveApp(){
     B.on(base+'joined',v=>{S.joined=v||{};
       if(moi&&S.joined[moi]!==tok){ moi=null; try{localStorage.removeItem(KID);}catch(e){} }
       rendre();});
-    B.on(base+'scores',v=>{S.scores=v||{};rendrePied();});
+    B.on(base+'scores',v=>{S.scores=v||{};rendrePied(); if(S.etat&&S.etat.ecran==='classement') rendre();});
     B.on(base+'etat',v=>{S.etat=v; suivre(); rendre();});
   }).catch(()=>{ corps.innerHTML='<p class="el-att">Impossible de joindre le serveur. Vérifiez la connexion internet.</p>'; });
   function suivre(){ const q=S.etat&&S.etat.q; if(q===qCour) return; qCour=q; if(offVote) offVote(); if(offRes) offRes(); S.vote=null; S.res=null; offVote=offRes=null;
@@ -650,6 +658,7 @@ function eleveApp(){
     $('elChg').onclick=()=>{ if(confirm('Changer de prénom ?')){ moi=null; try{localStorage.removeItem(KID);}catch(e){} rendre(); } };
     rendrePied();
     const e=S.etat;
+    if(e&&!e.q&&e.ecran==='classement'){ cle='cl'; vueClassementEleve(e); return; }
     if(!e||!e.q){ if(cle!=='att'){ cle='att'; corps.innerHTML='<p class="el-att"><span class="gros">🎮</span>Manette prête.<br>Regardez l\'écran : la prochaine manche arrive.</p>'; } return; }
     const k=[e.q,!!S.vote,!!S.res,!!e.revele].join('|');
     if(k===cle) return; cle=k;
@@ -677,7 +686,11 @@ function eleveApp(){
   function vueChoix(e,clos,z){
     const v=S.vote, r=S.res&&S.res.r!=null?S.res.r:null;
     z.innerHTML=`<div class="el-choix ${v?'vote':''}">`+(e.choix||[]).map((t,i)=>`<button data-i="${i}" class="f${i%6} ${v&&v.c===i?'moi':''} ${r===i?'bon':''}" ${v||clos?'disabled':''}><span class="forme">${FORMES[i%6]}</span><span>${t}</span></button>`).join('')+'</div>';
-    z.querySelectorAll('button').forEach(b=>b.onclick=()=>{ z.querySelectorAll('button').forEach(x=>x.disabled=true); b.classList.add('moi'); z.firstChild.classList.add('vote'); envoyer(+b.dataset.i); });
+    if(v||clos) return;
+    /* 1) toucher une réponse la sélectionne (on peut changer d'avis), 2) « Valider » l'envoie */
+    let sel=null; const go=document.createElement('button'); go.className='el-go'; go.id='elGo'; go.disabled=true; go.textContent='Valider ma réponse'; z.appendChild(go);
+    z.querySelectorAll('.el-choix button').forEach(b=>b.onclick=()=>{ sel=+b.dataset.i; z.querySelectorAll('.el-choix button').forEach(x=>x.classList.toggle('sel',x===b)); go.disabled=false; go.textContent='Valider : '+FORMES[sel%6]; });
+    go.onclick=()=>{ if(sel==null) return; go.disabled=true; z.querySelectorAll('.el-choix button').forEach(x=>{ x.disabled=true; x.classList.remove('sel'); }); const b=z.querySelector(`.el-choix button[data-i="${sel}"]`); if(b) b.classList.add('moi'); z.firstChild.classList.add('vote'); go.remove(); envoyer(sel); };
   }
   /* --- estimation au curseur --- */
   function vueEstim(e,clos,z){
@@ -765,11 +778,18 @@ function eleveApp(){
     cv.addEventListener('pointerdown',ev=>{ const r=cv.getBoundingClientRect(); pt=[Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height))]; dessin(); $('elGo').disabled=false; });
     $('elGo').onclick=()=>{ if(!pt) return; $('elGo').disabled=true; envoyer(Math.round(pt[0]*999)*1000+Math.round(pt[1]*999)); };
   }
+  /* classement général : tous les étudiants connectés (et ceux qui ont des points), sa propre ligne mise en évidence */
+  function classementLocal(){ const sc=S.scores||{}, R={}; Object.keys(S.roster).forEach(id=>{ if(id===moi||(S.joined||{})[id]||(sc[id]&&sc[id].tot>0)) R[id]=S.roster[id]; }); return trierScores(sc,R); }
+  function vueClassementEleve(e){
+    const L=classementLocal();
+    corps.innerHTML=`<div class="el-lv">${echapper(e.lv||'')}</div><h2 class="el-cl-t">Classement général</h2><ol class="el-cl">`+
+      L.map(x=>`<li class="${x.id===moi?'moi':''}"><span class="r">${(x.tot>0&&['🥇','🥈','🥉'][x.rang-1])||x.rang}</span><span class="n">${echapper(x.nom)}</span><span class="p">${x.tot} pt${x.tot>1?'s':''}</span></li>`).join('')+'</ol>';
+    const m=corps.querySelector('li.moi'); if(m) m.scrollIntoView({block:'center'});
+  }
   function rendrePied(){
     if(!moi||!S.roster||!S.roster[moi]){ pied.innerHTML=''; return; }
     /* classement parmi les étudiants connectés (et ceux qui ont déjà des points) */
-    const sc=S.scores||{}, R={}; Object.keys(S.roster).forEach(id=>{ if(id===moi||(S.joined||{})[id]||(sc[id]&&sc[id].tot>0)) R[id]=S.roster[id]; });
-    const L=trierScores(sc,R), k=L.findIndex(x=>x.id===moi); if(k<0) return;
+    const L=classementLocal(), k=L.findIndex(x=>x.id===moi); if(k<0) return;
     const me=L[k], av=L[k-1], ap=L[k+1], exa=L.filter(x=>x.rang===me.rang).length>1;
     pied.innerHTML=`<div class="el-rang"><b>${me.rang}<sup>${me.rang===1?'er':'e'}</sup></b>${exa?' ex æquo':''} sur ${L.length} · <b>${me.tot}</b> pt${me.tot>1?'s':''}</div>`+
       `<div class="el-voisins"><span>${av?'↑ '+echapper(av.nom)+' ('+av.tot+')':'Vous êtes en tête'}</span><span>${ap?'↓ '+echapper(ap.nom)+' ('+ap.tot+')':''}</span></div>`;
@@ -853,6 +873,9 @@ async function liveCorriger(q,R){ if(!LIVE.on) return; const D=D_(); if((D.resul
   await LIVE.B.set('sessions/'+LIVE.code+'/scores',calculerScores({...D,results:{...(D.results||{}),[q]:R2}}));
   sonRevele();
 }
+/* classement général envoyé sur les téléphones (bilan d'un quiz, classement final) */
+function liveClassement(lv){ if(!LIVE.on) return; const e=D_().etat||{}; if(e.ecran==='classement'&&e.lv===lv&&!e.q) return; if(qActif()) return;
+  LIVE.B.set('sessions/'+LIVE.code+'/etat',{q:'',revele:true,ecran:'classement',lv}); }
 async function liveVider(){ if(LIVE.on) await LIVE.B.set('sessions/'+LIVE.code+'/etat',{q:'',revele:true}); }
 /* minuterie : correction automatique à la fin du temps */
 let minuterieQ=null, minuterieH=0, dernierTic=-1;
@@ -1037,6 +1060,7 @@ function vueQuiz(n){
     surveillerChrono();
   }
   function rendreFin(){
+    liveClassement('Après le quiz · '+(n.bonus?n.num:'Level '+n.num));
     const D=D_(), L=trierScores(D.scores||{},D.roster);
     const pts={}; L.forEach(e=>pts[e.id]=e.m[n.id]||0);
     const Lv=[...L].sort((a,b)=>pts[b.id]-pts[a.id]||a.nom.localeCompare(b.nom,'fr'));
@@ -1067,6 +1091,7 @@ function vueClassement(){
   const el=document.createElement('div'); el.className='wrap cl';
   el.innerHTML='<main class="carte" style="overflow:auto"></main><aside class="carte"></aside>';
   function rendre(){
+    liveClassement('Classement final');
     const m=el.querySelector('main'), as=el.querySelector('aside'), D=D_();
     if(!LIVE.on){ m.innerHTML='<h3>Classement</h3><p class="note">Le mode live n\'est pas actif. Ouvrez « 📱 Live » dans le bandeau pour créer une séance.</p>'; as.innerHTML=''; return; }
     const L=trierScores(D.scores||{},D.roster), res=D.results||{}, nvx=NIVEAUX.filter(n=>Object.keys(res).some(q=>NIV_DE(q)===n.id));
@@ -1385,7 +1410,13 @@ const modB={id:'b',titre:'Le golfeur aveugle',
     {id:'1',type:'golf',titre:'Mon spot de 3,8 pC',texte:'Délivrez un spot de <b>3,8 pC</b> (tolérance 3,7 à 3,9 pC). Chaque pulse délivre la charge demandée à ±10 % près. Au-delà de 3,9 pC, le spot est surdosé.',
      bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC, en le moins de pulses possible',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:8}),regler:()=>{ spotDemo=null; modB.redessiner(); },
      e:'Stratégie du golfeur aveugle : on vise court (une fraction du reste), puis on finit par de petits pulses, dont l\'erreur <b>absolue</b> est petite. Tout demander d\'un coup (±0,38 pC d\'erreur sur un seul pulse) dépasse la tolérance environ 4 fois sur 10 (voir les pourcentages sous les graphes).'},
-    {id:'2',type:'golf',titre:'Même spot, 3 pulses maximum',texte:'Même spot de <b>3,8 pC</b>, mais en <b>3 pulses maximum</b> (le traitement doit aller vite).',
+    {id:'2',type:'golf',titre:'Même spot, 5 pulses maximum',texte:'Même spot de <b>3,8 pC</b>, mais en <b>5 pulses maximum</b> (le traitement doit aller plus vite).',
+     bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC en 5 pulses au plus',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:5}),regler:()=>{ spotDemo=null; modB.redessiner(); },
+     e:'Avec 5 pulses, la stratégie « viser court puis finir petit » marche encore bien : il faut juste viser un peu moins court au début.'},
+    {id:'3',type:'golf',titre:'Même spot, 4 pulses maximum',texte:'Même spot de <b>3,8 pC</b>, mais en <b>4 pulses maximum</b> (le traitement doit aller plus vite).',
+     bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC en 4 pulses au plus',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:4}),regler:()=>{ spotDemo=null; modB.redessiner(); },
+     e:'Avec 4 pulses, la marge se réduit : il faut viser plus près du but dès les premiers pulses, avec plus de risque de dépasser.'},
+    {id:'4',type:'golf',titre:'Même spot, 3 pulses maximum',texte:'Même spot de <b>3,8 pC</b>, mais en <b>3 pulses maximum</b> (le traitement doit aller plus vite).',
      bas:3.7,haut:3.9,aff:'3,7 à 3,9 pC en 3 pulses au plus',charge:()=>({cible:3.8,bas:3.7,haut:3.9,sigma:0.10,maxp:3}),regler:()=>{ spotDemo=null; modB.redessiner(); },
      e:'Moins de pulses, c\'est un traitement plus rapide, mais un risque plus grand de sortir de la tolérance : compromis entre précision et durée. Avec une meilleure stabilité des pulses (look-up table, diapo 64), on peut viser plus près du but à chaque pulse.'},
   ],
@@ -1674,7 +1705,7 @@ function lateral(sig,sp){
   const y=ys.map(v=>100*v/moy), c2=ctr.map(v=>100*v/moy);
   return {sig,sp,pos,xs,y,moy,ond:(Math.max(...c2)-Math.min(...c2))/2,ratio:sp/(2.355*sig)};
 }
-const CONF={'1':{zp:11.5,zd:15,dz:5},'2':{zp:9,zd:15,dz:5}};
+const CONF={'1':{zp:13,zd:15,dz:5},'2':{zp:11.5,zd:15,dz:5}};
 function poidsEquipe(vs,n){ const s=new Array(n).fill(0), c=new Array(n).fill(0); s[0]=100; c[0]=1;
   Object.values(vs||{}).forEach(v=>{ const k=Math.floor(v.c/1000), w=v.c%1000; if(k>0&&k<n){ s[k]+=w; c[k]++; } });
   return {w:s.map((x,k)=>c[k]?x/c[k]:0),c}; }
@@ -1702,7 +1733,7 @@ const modA={id:'a',titre:'SOBP à plusieurs mains',
       <div class="seg" id="l5poids"><button type="button" data-v="opt" class="actif">Poids optimisés</button><button type="button" data-v="eq">Poids égaux</button><button type="button" data-v="equipe">Poids de la salle</button></div>
     </div>`,
   sources:'Pics natifs : modèle du level 4 (σ<sub>E</sub>/E = 0,5 %). Poids optimisés par moindres carrés positifs (cible : dose uniforme entre les bords) ; homogénéité calculée en excluant 2 mm à chaque bord. Jeu collectif : poids moyen des étudiants de chaque couche ; 1 pt si le poids est à ±25 % (au moins ±5) de l\'optimum, +1 pour toute l\'équipe si le plateau est à ±5 %.'+SRC_PEDA,
-  manches:[ manchesCouches('1','Plateau à plusieurs mains (8 couches)'), manchesCouches('2','Plateau plus large (13 couches)') ],
+  manches:[ manchesCouches('1','Plateau à plusieurs mains (5 couches)'), manchesCouches('2','Plateau plus large (8 couches)') ],
   maj(){ this.calc(); this.redessiner(); },
   calc(){ let zp=+$('l5zp').value, zd=+$('l5zd').value; if(zd<zp+1){ zd=zp+1; $('l5zd').value=zd; }
     $('l5zpo').textContent=fr(zp,1)+' cm'; $('l5zdo').textContent=fr(zd,1)+' cm'; $('l5dzo').textContent=$('l5dz').value+' mm';
@@ -2142,14 +2173,10 @@ function scenario(eps,mmm,impl,u){
   return {Dplan,Dreel,bmin,bmax,cov:dans(Dreel,CTV,'cov'),min:dans(Dreel,CTV,'min'),oar:dans(Dreel,OAR,'max'),oarPlan:dans(Dplan,OAR,'max'),
     covW:bmin?dans(bmin,CTV,'cov'):null,oarW:bmax?dans(bmax,OAR,'max'):null,shift:(r80(Dreel)-r80(Dplan))*10,regle:0.035*wet(CTV[1],impl,'plan',1)*10+1};
 }
-const PARI_EPS=0.03, PARI_OAR=50;
-let pariTab=null;
-const pariOk=m=>{ if(!pariTab) pariTab={}; const k=(Math.round(m*2)/2).toFixed(1); if(!pariTab[k]){ const s=scenario(PARI_EPS,+k,false,0); pariTab[k]={min:s.min,oar:s.oar,ok:s.min>=95&&s.oar<=PARI_OAR}; } return pariTab[k]; };
-function fenetrePari(){ const ok=[]; for(let m=0;m<=10;m+=0.5) if(pariOk(m).ok) ok.push(m); return ok.length?[ok[0],ok[ok.length-1]]:[0,0]; }
 let cA=null, voirReel=true;
 function reglerA(o){ ['eps','marge','unc'].forEach(k=>{ if(o[k]!=null) $('l8'+k).value=o[k]; }); if(o.impl!=null) $('l8impl').checked=o.impl; voirReel=o.reel!==false; modA.maj(); }
 const modA={id:'a',titre:'Marges de parcours',
-  consigne:'Manche 2 : un pari. Chacun choisit sa marge sans connaître l\'erreur du jour ; la correction la révèle.',
+  consigne:'Ouvrez une manche, lancez-la sur les téléphones, puis révélez la réponse : le graphique montre alors la dose réellement délivrée.',
   html:`<div class="titre-graphe"><h3>Incertitude de parcours et marges</h3><span class="note">Un faisceau, une cible de 10 à 14 cm, un organe à risque derrière. Tirets : dose prévue par le TPS. Trait plein : dose réellement délivrée.</span></div>
     <div class="graphe"><canvas id="cvPar" aria-label="Dose prévue et dose réelle"></canvas><div class="info" id="l8info"></div></div>
     <div class="cmd">
@@ -2163,12 +2190,10 @@ const modA={id:'a',titre:'Marges de parcours',
     {id:'1',type:'estim',titre:'La règle des 3,5 % + 1 mm',texte:'Règle usuelle : marge = <b>3,5 % du parcours + 1 mm</b>. Quelle marge pour un parcours de <b>15 cm</b> ?',min:0,max:20,pas:0.25,dec:2,def:3,unite:'mm',r:6.25,tol:0.5,aff:'≈ 6 mm (0,035 × 150 + 1)',
      regler:()=>reglerA({eps:0,marge:0,unc:3.5,impl:false}),apres:()=>reglerA({marge:6}),
      e:'0,035 × 150 mm + 1 mm ≈ 6,25 mm. Le % couvre l\'incertitude sur la conversion UH → SPR, proportionnelle à la profondeur ; le mm couvre ce qui n\'en dépend pas (résolution du scanner, calcul de dose, reproductibilité).'},
-    {id:'2',type:'estim',titre:'Pari sur la marge',masque:true,texte:'Les SPR réels du patient sont <b>plus élevés</b> que ceux du TPS, d\'une valeur inconnue (quelques %). Choisissez votre <b>marge</b> : il faut couvrir la cible (≥ 95 % partout) <b>et</b> laisser l\'OAR sous 50 %.',min:0,max:10,pas:0.5,dec:1,def:3,unite:'mm',
-     get bande(){ return fenetrePari(); }, get r(){ return fenetrePari()[0]; },
-     juste:v=>pariOk(v).ok,ecart:v=>{ const o=pariOk(v); return o.ok?o.oar:Infinity; },
-     get aff(){ const f=fenetrePari(); return `erreur réelle : SPR +3 % ; gagnant de ${fr(f[0],1)} à ${fr(f[1],1)} mm`; },
-     regler:()=>reglerA({eps:0,marge:3,unc:0,impl:false,reel:false}),apres:()=>reglerA({eps:3,marge:fenetrePari()[0],unc:0,impl:false}),
-     e:'Avec des SPR 3 % plus élevés, les protons s\'arrêtent ≈ 4 mm trop tôt : sans marge, le bord distal de la cible est sous-dosé. Trop de marge, et l\'OAR prend la dose. La marge protège la cible, pas l\'OAR situé derrière : pour lui, il faut jouer sur la balistique.'},
+    {id:'2',type:'choix',titre:'SPR sous-estimés, sans marge',masque:true,texte:'Les SPR réels du patient sont <b>3 % plus élevés</b> que ceux du TPS. <b>Sans marge</b>, que se passe-t-il ?',
+     choix:['Les protons s\'arrêtent ≈ 4 mm trop tôt : le bord distal de la cible est sous-dosé','L\'organe à risque derrière la cible reçoit plus de dose','Rien : l\'écart est trop faible','La dose à l\'entrée augmente fortement'],r:0,
+     regler:()=>reglerA({eps:0,marge:0,unc:0,impl:false,reel:false}),apres:()=>reglerA({eps:3,marge:0,unc:0,impl:false}),
+     e:'SPR plus élevés = parcours plus court : le pic recule vers l\'entrée et le bord distal de la cible n\'est plus couvert. C\'est ce que compense la marge (3,5 % + 1 mm) ; elle protège la cible, pas l\'OAR situé derrière : pour lui, il faut jouer sur la balistique.'},
     {id:'3',type:'estim',titre:'L\'implant mammaire',masque:true,texte:'Un implant de <b>4 cm</b> est vu à <b>1,08</b> par le scanner simple énergie, alors que sa vraie valeur est <b>0,94</b> (DECT). De combien le bord distal se décale-t-il ?',min:0,max:15,pas:0.1,dec:1,def:2,unite:'mm',r:5.6,tol:1,aff:'≈ 5,6 mm plus loin que prévu',
      regler:()=>reglerA({eps:0,marge:0,unc:0,impl:true,reel:false}),apres:()=>reglerA({eps:0,marge:0,unc:0,impl:true}),
      e:'4 cm × (1,08 − 0,94) ≈ 0,56 cm d\'eau : le TPS croit que l\'implant freine plus qu\'en réalité, le faisceau va ≈ 5,6 mm trop loin. La diapo 191 rapporte une erreur d\'isodose de 7 mm sur un cas réel. D\'où l\'intérêt du DECT (bonus 1).'},
@@ -2191,77 +2216,13 @@ const modA={id:'a',titre:'Marges de parcours',
     axes(ctx,g,fs,[0,2,4,6,8,10,12,14,16,18,20].map(v=>[v,X(v),v]),[0,25,50,75,100,125].map(v=>[v,Y(v),v]),'Profondeur dans le patient (cm)','Dose (% de la prescription)');
     ctx.save(); ctx.beginPath(); ctx.rect(g.x,g.y,g.w,g.h); ctx.clip();
     if($('l8bande').checked&&c.bmin&&!cach){ ctx.fillStyle=css('--dose'); ctx.globalAlpha=.18; ctx.beginPath(); ZS.forEach((z,k)=>k?ctx.lineTo(X(z),Y(c.bmax[k])):ctx.moveTo(X(z),Y(c.bmax[k]))); for(let k=ZS.length-1;k>=0;k--) ctx.lineTo(X(ZS[k]),Y(c.bmin[k])); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1; }
-    if(this.jeu&&this.jeu.m&&this.jeu.m.id==='2'){ trait(ctx,[[g.x,Y(PARI_OAR)],[g.x+g.w,Y(PARI_OAR)]],'#7b2cbf',1.5,[4,3]); etiquette(ctx,'limite OAR 50 %',X(OAR[1])+4,Y(PARI_OAR)-fs*0.6,'#7b2cbf',Math.round(fs*0.85),'left'); }
     trait(ctx,ZS.map((z,k)=>[X(z),Y(c.Dplan[k])]),css('--texte-2'),2,[6,4]);
     if(!cach) trait(ctx,ZS.map((z,k)=>[X(z),Y(c.Dreel[k])]),css('--dose'),3);
     ctx.restore();
   }
 };
-/* ---------- Module B : mouvement, interplay, repainting, gating ---------- */
-let techMv='pbs', phase=0.55, cB=null, seancesPrec=[];
-const T6=4, NL6=10, LDOM6=4, TCH6=1, XS6=[]; for(let x=-45;x<=45+1e-9;x+=0.5) XS6.push(+x.toFixed(1));
-function fraction6(o,ph){
-  const GW=0.3, mref=o.mode==='gate'?-(1-GW/2)*o.A:0, /* gating : fenêtre = 30 % de l'amplitude, en fin d'expiration */ D=new Float64Array(XS6.length), mot=t=>o.A*Math.sin(2*Math.PI*(t/T6+ph)), evts=[];
-  const half=20+(o.mode==='ds'?3:6)+(o.itv&&o.mode!=='gate'?o.A:0)+(o.itv&&o.mode==='gate'?GW/2*o.A:0);
-  if(o.mode==='ds'){ const Ttot=NL6*(o.ts+TCH6), n=400;
-    for(let k=0;k<n;k++){ const t=Ttot*(k+0.5)/n, m=mot(t)-mref; XS6.forEach((x,i)=>{ const xr=x+m; D[i]+=0.5*(erf((half-xr)/(2*Math.SQRT2))+erf((half+xr)/(2*Math.SQRT2)))/n; }); if(k%8===0) evts.push([t,m]); }
-    return {D,evts,Ttot}; }
-  const c=[]; for(let x=-Math.floor((half+2.5)/5)*5;x<=half+2.5+1e-9;x+=5) c.push(x);
-  const dt=o.ts/(c.length*o.N), sg=4, gateOK=m=>o.mode!=='gate'||m<=-o.A+GW*o.A; let t=0;
-  for(let l=0;l<NL6;l++){ for(let r=0;r<o.N;r++){ const ordre=(r%2)?c.slice().reverse():c;
-      for(const ck of ordre){ if(o.mode==='gate'&&o.A>0){ let g=0; while(!gateOK(mot(t))&&g<100000){t+=0.01;g++;} }
-        const m=mot(t); evts.push([t,m,l===LDOM6]); if(l===LDOM6){ const mm=m-mref; XS6.forEach((x,i)=>{ const d=x-(ck-mm); D[i]+=Math.exp(-0.5*d*d/(sg*sg))/o.N; }); } t+=dt; } }
-    t+=TCH6; }
-  return {D,evts,Ttot:t};
-}
-function calculB(){
-  const o={A:8,ts:2,N:techMv==='repaint'?5:1,itv:true,mode:techMv==='repaint'?'pbs':techMv};
-  const stat=fraction6(Object.assign({},o,{A:0}),0);
-  const norm=(()=>{let s=0,n=0; XS6.forEach((x,i)=>{if(Math.abs(x)<=10){s+=stat.D[i];n++;}}); return 100/(s/n);})();
-  const un=fraction6(o,phase), rnd=hasard(12345), moy=new Float64Array(XS6.length);
-  for(let f=0;f<30;f++){ const F=fraction6(o,rnd()); F.D.forEach((v,i)=>moy[i]+=v/30); }
-  const nz=a=>Array.from(a,v=>v*norm), S=nz(stat.D), U=nz(un.D), M=nz(moy);
-  const ctv=(a,f)=>{let mn=1e9,mx=0,n=0,cv=0; XS6.forEach((x,i)=>{if(Math.abs(x)<=20){mn=Math.min(mn,a[i]);mx=Math.max(mx,a[i]);n++; if(a[i]>=95) cv++;}}); return f==='min'?mn:f==='max'?mx:100*cv/n;};
-  cB={o,S,U,M,evts:un.evts,Ttot:un.Ttot,uMin:ctv(U,'min'),uMax:ctv(U,'max'),mMin:ctv(M,'min'),mMax:ctv(M,'max'),mCov:ctv(M,'cov')};
-}
-function reglerB(t,ph){ techMv=t; seancesPrec=[]; segVal('l8mode',t); if(ph!=null) phase=ph; modB.maj(); }
-const modB={id:'b',titre:'Mouvement : effet interplay',
-  html:`<div class="titre-graphe"><h3>Tumeur qui bouge de ± 8 mm : la dose est-elle homogène ?</h3>
-      <div class="seg" id="l8mode"><button type="button" data-v="pbs" class="actif">PBS</button><button type="button" data-v="repaint">PBS + repainting</button><button type="button" data-v="gate">PBS + gating</button><button type="button" data-v="ds">Double diffusion</button></div>
-      <button class="btn" id="l8fx" type="button">Autre séance</button></div>
-    <div class="legende"><span class="l l-ghost">Tumeur immobile</span><span class="l l-dose">Tumeur qui bouge (1 séance ; en pâle, les séances précédentes)</span><span class="note">bande verte : 95 à 105 %, dose acceptable</span></div>
-    <div class="graphe"><canvas id="cvMv" aria-label="Profil de dose dans la tumeur en mouvement"></canvas><div class="info" id="l8binfo"></div></div>`,
-  sources:'1D latéral. CTV de 40 mm en mouvement sinusoïdal (période 4 s). Mouvement ± 8 mm, marge ITV. PBS : spots σ = 4 mm tous les 5 mm, 10 couches, 2 s par couche, 1 s de changement d\'énergie ; on regarde la dose d\'une couche (ce qui exagère un peu l\'effet). Repainting : chaque couche délivrée 5 fois avec 1/5 du poids. Gating : faisceau en fin d\'expiration seulement (fenêtre = 30 % de l\'amplitude). Double diffusion : champ délivré en continu. Idée inspirée de la diapo 201 (Knopf et al. 2013).'+SRC_PEDA,
-  manches:[
-    {id:'1',type:'choix',titre:'Une fraction en PBS',masque:true,texte:'Tumeur qui bouge de ± 8 mm, PBS en un seul passage, marge ITV. Sur <b>une</b> fraction, la dose dans le CTV est-elle homogène ?',choix:['Oui, la marge ITV suffit','Non : zones sur- et sous-dosées selon la phase (effet interplay)','Non, mais seulement sur les bords'],r:1,regler:()=>reglerB('pbs',0.55),
-     e:'Le balayage spot par spot et le mouvement respiratoire se combinent : spots étirés (sous-dosage) ou tassés (surdosage). Bouton « Autre séance » : le motif change à chaque séance (sur 30 séances, il se moyenne en partie). La marge ITV ne protège pas de cela.'},
-    {id:'2',type:'choix',titre:'Même mouvement en DS',texte:'Même mouvement, mais en <b>double diffusion</b> (marge ITV) :',choix:['Mêmes points chauds et froids','Dose homogène dans le CTV : tout le champ est délivré en même temps','Pire qu\'en PBS'],r:1,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('ds'),
-     e:'En DS, la roue de modulation tourne vite et tout le champ est irradié à la fois : le mouvement floute seulement les bords. D\'où la diapo PBS vs DS : « difficulté à traiter des cibles mobiles » en PBS.'},
-    {id:'3',type:'choix',titre:'Repainting',texte:'Retour au PBS : on passe à <b>5 passages par couche</b> (repainting). Effet ?',choix:['Aucun','Les points chauds et froids se moyennent','La dose totale est divisée par 5'],r:1,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('repaint'),
-     e:'Chaque passage délivre 1/5 de la dose à une phase différente : les erreurs se compensent. Coût : plus de temps morts et des spots de faible poids, limités par le minimum délivrable par la machine.'},
-    {id:'4',type:'choix',titre:'Gating',texte:'PBS avec <b>gating</b> (faisceau seulement en fin d\'expiration). Avantage et limite ?',choix:['Mouvement résiduel plus faible et marges plus petites, mais traitement plus long','Il supprime tout effet du mouvement, sans coût','Il oblige à augmenter les marges'],r:0,regler:()=>reglerB('pbs',0.55),apres:()=>reglerB('gate'),
-     e:'Ici la séance passe d\'environ 30 s à 80 s. Un interplay résiduel persiste ; en pratique on combine gating et repainting, ou on traite en inspiration bloquée (diapo 201, cas du sein au level 9).'},
-  ],
-  maj(){ calculB(); this.redessiner(); },
-  init(){ seg('l8mode',v=>{ techMv=v; seancesPrec=[]; this.maj(); }); $('l8fx').onclick=()=>{ if(cB) seancesPrec=[cB.U].concat(seancesPrec).slice(0,4); let p; do{ p=Math.random(); }while(Math.abs(p-phase)<0.12); phase=p; this.maj(); }; observer(['cvMv'],()=>this.redessiner()); this.maj(); },
-  redessiner(){
-    if(!cB) return; const c=cB, ok=c.uMin>=95&&c.uMax<=105, col=ok?'var(--juste)':'var(--faux)', cachB=cache(this);
-    const fx=$('l8fx'); fx.disabled=techMv!=='pbs'; fx.title=techMv==='pbs'?'Même plan, autre phase respiratoire au début de la séance':techMv==='gate'?'En gating, la séance démarre toujours dans la fenêtre : le résultat ne change pas':'Peu d\'effet visible avec cette technique';
-    if(cachB) $('l8binfo').innerHTML='Tumeur qui bouge : affichée après la réponse'; else
-    $('l8binfo').innerHTML=`Dose dans la tumeur : <b style="color:${col}">${fr(c.uMin,0)} à ${fr(c.uMax,0)} %</b><br>Durée de la séance : <b>${fr(c.Ttot,0)} s</b>`;
-    const P0=prep($('cvMv'));
-    if(P0){ const {c:ctx,W,H}=P0, fs=taillePolice(H,0.05,11,17);
-      const g={x:fs*3.4,y:fs*0.7,w:W-fs*3.4-fs,h:H-fs*0.7-fs*3}, X=x=>g.x+(x+45)/90*g.w, Y=v=>g.y+g.h-Math.min(v,160)/160*g.h;
-      ctx.fillStyle=css('--grille');ctx.globalAlpha=.6;ctx.fillRect(X(-20),g.y,X(20)-X(-20),g.h);ctx.globalAlpha=1;
-      ctx.fillStyle=css('--juste');ctx.globalAlpha=.15;ctx.fillRect(g.x,Y(105),g.w,Y(95)-Y(105));ctx.globalAlpha=1;
-      axes(ctx,g,fs,[-40,-20,0,20,40].map(v=>[v,X(v),v]),[0,40,80,120,160].map(v=>[v,Y(v),v]),'Position dans la tumeur (mm)','Dose (%)');
-      etiquette(ctx,'tumeur (CTV)',X(0),g.y+2,css('--texte-2'),fs,'center','top');
-      ctx.save();ctx.beginPath();ctx.rect(g.x,g.y,g.w,g.h);ctx.clip();
-      const tr=(a,cl,lw,d)=>trait(ctx,XS6.map((x,i)=>[X(x),Y(a[i])]),cl,lw,d);
-      tr(c.S,css('--ghost'),2,[6,4]); ctx.globalAlpha=.3; if(!cachB) seancesPrec.forEach(a=>tr(a,css('--dose'),1.5)); ctx.globalAlpha=1; if(!cachB) tr(c.U,css('--dose'),3); ctx.restore(); }
-  }
-};
-NIVEAUX.push({id:'L8',num:'8',court:'Planification',titre:'Planification de traitement',diapos:'186-202',modules:[modA,modB],quiz:[
+/* module « Mouvement : effet interplay » retiré (trop complexe pour le format) */
+NIVEAUX.push({id:'L8',num:'8',court:'Planification',titre:'Planification de traitement',diapos:'186-202',modules:[modA],quiz:[
   {q:'Quel modèle de calcul de dose est le plus juste ?',c:['Le raytracing','L\'algorithme pencil beam','Le Monte Carlo','Ils sont équivalents'],r:2,d:'187-188',
    e:'Le Monte Carlo suit les particules une à une avec des modèles physiques : le plus juste, mais le plus lent (version simplifiée dans les TPS, accélérée sur GPU).'},
   {q:'Point faible de l\'algorithme pencil beam cité dans le cours ?',c:['Il ignore toutes les hétérogénéités','Il gère mal les gaps d\'air (matériel en amont du patient)','Il est plus lent que le Monte Carlo','Il ne fonctionne qu\'en double diffusion'],r:1,d:'187',
@@ -2272,6 +2233,8 @@ NIVEAUX.push({id:'L8',num:'8',court:'Planification',titre:'Planification de trai
    e:'La marge protège la cible, pas l\'OAR. En fin de parcours, l\'incertitude de parcours se cumule avec l\'EBR plus élevée : faisceaux tangents, carte de TEL, optimisation robuste ; en clinique, un compromis (« patch »).'},
   {q:'Optimisation robuste dans RayStation : scénarios d\'erreur typiques pour le crâne ?',c:['1 % / 1 mm','3 % / 3 mm','10 % / 10 mm','3,5 % / 1 mm'],r:1,d:'195',
    e:'3 % sur les SPR et 3 mm de positionnement au crâne, 5 mm en extra-crânien. L\'évaluation robuste remplace le PTV, inadapté aux protons.'},
+  {q:'Tumeur qui bouge : quelles parades contre l\'effet interplay (zones sur- et sous-dosées) en PBS ?',c:['Repainting (plusieurs passages par couche) et gating ou inspiration bloquée','Augmenter la dose prescrite','Réduire le nombre de couches en énergie','Passer à des spots plus petits'],r:0,d:'201',
+   e:'Repainting : chaque passage délivre une fraction de la dose à une phase différente, les erreurs se moyennent (au prix de temps morts). Gating ou inspiration bloquée : faisceau seulement dans une phase stable, mouvement résiduel plus faible, mais séance plus longue.'},
 ]});
 })();
 
