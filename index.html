@@ -1305,11 +1305,14 @@ function vueAccueil(){
     <section class="carte acc-noms"></section>
     <section class="carte acc-humeur"></section>
     <section class="carte acc-qr"></section>`;
-  const qid=Q_HUMEUR;
-  async function corriger(){ const d=comptesHumeur((D_().votes||{})[qid]||{});
-    await liveCorriger(qid,{ok:{},best:'',neutre:true,txt:diagnosticHumeur(d)}); }
-  async function lancer(){ CORRECTEURS[qid]=corriger;
-    await liveLancer(qid,{type:'choix',lv:'Accueil · Météo de la salle',texte:'Comment tu te sens aujourd\'hui ? <small>(0 point, juste pour rire)</small>',choix:HUMEURS.map(h=>h[0]+' '+h[1])}); }
+  /* le sondage peut être relancé : chaque tour a son identifiant (L0_humeur, L0_humeur2, L0_humeur3…) */
+  const idTour=k=>k>1?Q_HUMEUR+k:Q_HUMEUR, numTour=q=>{ const m=/^L0_humeur(\d*)$/.exec(q||''); return m?(+m[1]||1):0; };
+  const dernierTour=()=>{ const D=D_(); return Math.max(0,numTour((D.etat||{}).q),...Object.keys(D.results||{}).map(numTour)); };
+  const tourCourant=()=>idTour(Math.max(1,dernierTour()));
+  async function corriger(q){ q=q||tourCourant(); const d=comptesHumeur((D_().votes||{})[q]||{});
+    await liveCorriger(q,{ok:{},best:'',neutre:true,txt:diagnosticHumeur(d)}); }
+  async function lancer(nouveau){ const q=nouveau?idTour(dernierTour()+1):tourCourant(); CORRECTEURS[q]=()=>corriger(q);
+    await liveLancer(q,{type:'choix',lv:'Accueil · Météo de la salle',texte:'Comment tu te sens aujourd\'hui ? <small>(0 point, juste pour rire)</small>',choix:HUMEURS.map(h=>h[0]+' '+h[1])}); }
   function rendreQR(){
     const z=el.querySelector('.acc-qr');
     if(!LIVE.on){ if(z.dataset.u!=='-'){ z.dataset.u='-'; z.innerHTML='<div class="acc-vide"><span>📱</span><p>Le QR code de connexion s\'affiche ici dès que la séance est créée (bouton « 📱 Live »).</p></div>'; } return; }
@@ -1321,21 +1324,22 @@ function vueAccueil(){
     const D=D_(), ros=D.roster||{}, jn=D.joined||{}, ids=Object.keys(ros).sort((a,b)=>ros[a].localeCompare(ros[b],'fr')), nj=ids.filter(id=>jn[id]).length;
     el.querySelector('.acc-noms').innerHTML=`<div class="titre-graphe"><h3>Connectés</h3>${LIVE.on?`<span class="acc-cpt"><b>${nj}</b> / ${ids.length}</span>`:''}</div>`+
       (LIVE.on?`<div class="acc-j">${ids.map(id=>`<span class="${jn[id]?'in':''}">${echapper(ros[id])}</span>`).join('')}</div>`:'<p class="note">Ouvrez « 📱 Live » pour créer la séance : les prénoms s\'allument ici au fil des connexions.</p>');
+    const qid=tourCourant(), tour=numTour(qid);
     const vs=LIVE.on?((D.votes||{})[qid]||{}):{}, res=LIVE.on?(D.results||{})[qid]:null, actif=qActif()===qid, nv=Object.keys(vs).length, nb=Math.max(nv,nj), d=comptesHumeur(vs);
     const ordre=res?HUMEURS.map((_,k)=>k).sort((a,b)=>d.c[b]-d.c[a]||a-b):HUMEURS.map((_,k)=>k);
-    let h=`<div class="titre-graphe"><h3>Météo de la salle</h3><span class="note">0 point, juste pour rire</span></div><div class="acc-q">Comment tu te sens aujourd'hui ?</div>
+    let h=`<div class="titre-graphe"><h3>Météo de la salle</h3><span class="note">${tour>1?'sondage n° '+tour+' · ':''}0 point, juste pour rire</span></div><div class="acc-q">Comment tu te sens aujourd'hui ?</div>
       <div class="acc-hum ${res?'rev':''}">`+ordre.map(k=>`<div class="${res&&d.top.includes(k)?'top':''}">${res?`<i style="width:${d.mx?100*d.c[k]/d.mx:0}%"></i>`:''}<span class="e">${HUMEURS[k][0]}</span><span>${HUMEURS[k][1]}</span>${res?`<span class="n">${d.c[k]}</span>`:''}</div>`).join('')+'</div>';
-    if(res) h+=`<div class="acc-diag">🩺 <b>Diagnostic :</b> ${echapper(res.txt||diagnosticHumeur(d))}</div>`;
+    if(res) h+=`<div class="acc-diag">🩺 <b>Diagnostic :</b> ${echapper(res.txt||diagnosticHumeur(d))}</div><div class="mactions"><button class="btn live" data-a="relancer" type="button">🔄 Relancer le sondage</button></div>`;
     else if(LIVE.on){ h+='<div class="mactions">'+(actif?'<button class="btn plein" data-a="rev" type="button">Révéler la météo</button>':'<button class="btn live" data-a="lancer" type="button">📱 Lancer la question</button>')+'</div>';
       if(actif) h+=`<div class="etat-live"><b>${nv}</b> / ${nb} connectés ont répondu${nb&&nv>=nb?' ✓':''}<div class="progress"><i style="width:${nb?100*nv/nb:0}%"></i></div></div>`; }
     else h+='<p class="note">En mode live, chacun répond sur son téléphone.</p>';
     const zh=el.querySelector('.acc-humeur'); zh.innerHTML=h;
-    zh.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{ b.disabled=true; if(b.dataset.a==='lancer') await lancer(); else await corriger(); });
+    zh.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{ b.disabled=true; if(b.dataset.a==='lancer') await lancer(false); else if(b.dataset.a==='relancer') await lancer(true); else await corriger(); });
     rendreQR(); }
   /* télécommande : lancer la question, puis révéler ; ensuite, level 1 */
-  function prochaine(){ if(!LIVE.on) return null; const res=(D_().results||{})[qid];
+  function prochaine(){ if(!LIVE.on) return null; const qid=tourCourant(), res=(D_().results||{})[qid];
     if(qActif()===qid) return {label:'Révéler la météo de la salle',garde:true,faire:corriger};
-    if(!res) return {label:'📱 Lancer « Comment tu te sens ? »',lance:true,faire:lancer};
+    if(!res) return {label:'📱 Lancer « Comment tu te sens ? »',lance:true,faire:()=>lancer(false)};
     return null; }
   return {el,afficher:rendre,rafraichir:rendre,prochaine,precedent:()=>false};
 }
